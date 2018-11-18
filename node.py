@@ -76,11 +76,11 @@ class Node(object):
 				self.is_master = True
 				self.file_list = {}
 
-			file_list = os.listdir('sdfs_files')
+			# file_list = os.listdir('sdfs_files')
 
 			# on joining, clean previous node's sdfs_files
-			for file in file_list:
-				os.remove('sdfs_files/' + file)
+			# for file in file_list:
+				# os.remove('sdfs_files/' + file)
 
 		except socket.error as e:  # If connection to remote machine fails
 			print 'INTRODUCE(): Could not connect to the introducer at ' + str(INTRODUCER_IP)
