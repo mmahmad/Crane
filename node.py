@@ -187,6 +187,8 @@ class Node(object):
 					'type': 'FAIL',
 					'failed_node': id
 				}
+				print "Detected node failure"
+				print data
 
 				try:
 					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -654,8 +656,10 @@ def main():
 	t3.start()
 
 	init = True
-
+	node.command = 'JOIN'
+	node.introduce()
 	# Take input "JOIN/LEAVE/LIST/ID"
+	'''
 	while True:
 		full_command = raw_input('\nEnter command...\n')
 
@@ -872,7 +876,7 @@ def main():
 				print 'Time taken to download versions: '
 				print end_time - start_time
 				print 'All versions transferred successfully'
-
+	'''
 	if node.command == 'LEAVE':
 		return
 
