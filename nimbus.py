@@ -11,6 +11,7 @@ import yaml
 import Queue
 import time
 import pprint
+import collections
 
 def get_process_hostname():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -30,7 +31,7 @@ class Nimbus(object):
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self.sock.bind((self.host, self.port))
-		self.worker_mapping = {}
+		self.worker_mapping = collections.defaultdict(list)
 		self.machine_list = []
 
 	def listen(self):
