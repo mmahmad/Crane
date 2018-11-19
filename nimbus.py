@@ -32,6 +32,7 @@ class Nimbus(object):
 		self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self.sock.bind((self.host, self.port))
 		self.worker_mapping = collections.defaultdict(list)
+		self.reverse_mapping = {}
 		self.machine_list = []
 
 	def listen(self):
@@ -50,31 +51,43 @@ class Nimbus(object):
 				self.machine_list.append(addr[0])
 
 	def assign_jobs(self):
+		port = 5000
 		print 'List of alive machine IPs is'
 		print self.machine_list
 
 		counter = 0
 		for worker in self.config:
 			self.worker_mapping[self.machine_list[counter]].append(worker)
+
+			if worker['type'] == 'bolt':
+				self.reverse_mapping[worker] = (self.machine_list[counter], port)
+				port += 1
+			else:
+				self.reverse_mapping[worker] = self.machine_list[counter]
 			counter = (counter + 1) % (len(self.machine_list))
 		
 		print 'Job assignment:'
 		print self.worker_mapping
+		print 'Port mapping:'
+		print self.reverse_mapping
 
 		for worker in self.config:
+			if worker['type'] == 'bolt':
+				self.config[worker]['listen_port'] = self.reverse_mapping[worker][1]
+			
 			try:
 				children =self.config[worker]['children']
-				self.config[worker]['children_ip'] = []
+				self.config[worker]['children_ip_port'] = []
 				for child in children:
-					self.config['worker']['children_ip'].append(self.worker_mapping[child])
+					self.config[worker]['children_ip_port'].append(self.reverse_mapping[child])
 			except KeyError as e:
 				pass
 
 			try:
 				parents = self.config[worker]['parents']
-				self.config[worker]['parent_ip'] = []
+				self.config[worker]['parent_ip_port'] = []
 				for parent in parents:
-					self.config['worker']['parent_ip'].append(self.worker_mapping[parent])
+					self.config[worker]['parent_ip_port'].append(self.reverse_mapping[parent])
 			except KeyError as e:
 				pass
 
@@ -94,6 +107,6 @@ class Nimbus(object):
 def main():
 	nimbus = Nimbus()
 	nimbus.listen()
-
+	
 if __name__ == '__main__':
 	main()
