@@ -39,12 +39,12 @@ class Supervisor(object):
 
 			if task_details['type'] == 'spout':
 				spout = Spout(task_details)
-				t_id = threading.Thread(target = spout.start, args = (task_details))
+				t_id = threading.Thread(target = spout.start)
 				t_id.daemon = True
 				t_id.start()
 			elif task_details['type'] == 'bolt':
 				bolt = Bolt(task_details)
-				t_id = threading.Thread(target = bolt.start, args = (task_details))
+				t_id = threading.Thread(target = bolt.start)
 				t_id.daemon = True
 				t_id.start()
 
