@@ -63,7 +63,7 @@ class Nimbus(object):
 
 		for worker in self.config:
 			try:
-				children = worker['children']
+				children =self.config[worker]['children']
 				self.config[worker]['children_ip'] = []
 				for child in children:
 					self.config['worker']['children_ip'].append(self.worker_mapping[child])
@@ -71,10 +71,10 @@ class Nimbus(object):
 				pass
 
 			try:
-				parents = worker['parents']
+				parents = self.config[worker]['parents']
 				self.config[worker]['parent_ip'] = []
 				for parent in parents:
-					self.config['worker']['parent_ip'].append(self.worker_mapping[child])
+					self.config['worker']['parent_ip'].append(self.worker_mapping[parent])
 			except KeyError as e:
 				pass
 
