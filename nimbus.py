@@ -77,7 +77,7 @@ class Nimbus(object):
 			except KeyError as e:
 				pass
 
-		print 'Updated config with parent and children IPs':
+		print 'Updated config with parent and children IPs'
 		pprint.pprint(self.config)
 
 		for machine in self.machine_list:
