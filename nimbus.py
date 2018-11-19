@@ -10,6 +10,7 @@ import os
 import yaml
 import Queue
 import time
+import pprint
 
 def get_process_hostname():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -19,6 +20,7 @@ def get_process_hostname():
 
 NIMBUS_LISTEN_PORT = 20000
 NIMBUS_IP = get_process_hostname()
+SUPERVISOR_LISTEN_PORT = 6000
 
 class Nimbus(object):
 	def __init__(self):
@@ -28,7 +30,9 @@ class Nimbus(object):
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self.sock.bind((self.host, self.port))
-	
+		self.worker_mapping = {}
+		self.machine_list = []
+
 	def listen(self):
 		print "Waiting for worker to connect..."
 
@@ -40,10 +44,52 @@ class Nimbus(object):
 
 			if data['type'] == 'START_JOB':
 				self.config = data['config']
-				print self.config
+				self.assign_jobs()
 			elif data['type'] == 'JOIN_WORKER':
-				self.list_of_workers.append(data['ip'])
+				self.machine_list.append(addr[0])
 
+	def assign_jobs(self):
+		print 'List of alive machine IPs is'
+		print self.machine_list
+
+		counter = 0
+		for worker in self.config:
+			self.worker_mapping[self.machine_list[counter]].append(worker)
+			counter = (counter + 1) % (len(self.machine_list))
+		
+		print 'Job assignment:'
+		print self.worker_mapping
+
+		for worker in self.config:
+			try:
+				children = worker['children']
+				self.config[worker]['children_ip'] = []
+				for child in children:
+					self.config['worker']['children_ip'].append(self.worker_mapping[child])
+			except KeyError as e:
+				pass
+
+			try:
+				parents = worker['parents']
+				self.config[worker]['parent_ip'] = []
+				for parent in parents:
+					self.config['worker']['parent_ip'].append(self.worker_mapping[child])
+			except KeyError as e:
+				pass
+
+		print 'Updated config with parent and children IPs':
+		pprint.pprint(self.config)
+
+		for machine in self.machine_list:
+			for worker in self.worker_mapping[machine]:
+				try:
+					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+					sock.sendto(json.dumps(self.config[worker]), (machine, SUPERVISOR_LISTEN_PORT))
+				except:
+					print 'Unable to contact worker'
+					return
+			
 def main():
 	nimbus = Nimbus()
 	nimbus.listen()
