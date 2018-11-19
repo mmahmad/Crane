@@ -59,7 +59,7 @@ class Nimbus(object):
 		for worker in self.config:
 			self.worker_mapping[self.machine_list[counter]].append(worker)
 
-			if worker['type'] == 'bolt':
+			if self.config[worker]['type'] == 'bolt':
 				self.reverse_mapping[worker] = (self.machine_list[counter], port)
 				port += 1
 			else:
@@ -72,7 +72,7 @@ class Nimbus(object):
 		print self.reverse_mapping
 
 		for worker in self.config:
-			if worker['type'] == 'bolt':
+			if self.config[worker]['type'] == 'bolt':
 				self.config[worker]['listen_port'] = self.reverse_mapping[worker][1]
 			
 			try:
