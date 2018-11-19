@@ -71,7 +71,7 @@ class Spout(object):
 		tuple_id = 0
 
 		# read data line-by-line from source, add msgId, and forward to child bolt(s)
-		with open(self.task_details['input']) as infile:
+		with open('input/' + self.task_details['input']) as infile:
 			for line in infile:
 				line = line.rstrip()
 				# add a unique (auto_incremented) id to the line
