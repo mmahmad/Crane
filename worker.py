@@ -50,7 +50,7 @@ class Supervisor(object):
 
 '''
 Spout is started by a supervisor;
-It reads a given source (file/db/etc) line-by-line, generates a unique msgId for each line and prepends the msgId to it;
+It reads a given source (file/db/etc) line-by-line, generates a unique msgId for each line and appends the msgId to it;
 Store the line in buffer (dict with msgId as key for fast search) with timestamp;
 Convert line to tuple and forward to child(ren) bolt(s);
 
