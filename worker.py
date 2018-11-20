@@ -139,7 +139,7 @@ class Spout(object):
 			print 'ack received'
 			data = json.loads(data)
 			
-			t = threading.Thread(target = self.process_acks, args=(data))
+			t = threading.Thread(target = self.process_acks, args=(data, ))
 			t.daemon = True
 			t.start()
 
