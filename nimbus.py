@@ -22,6 +22,7 @@ def get_process_hostname():
 NIMBUS_LISTEN_PORT = 20000
 NIMBUS_IP = get_process_hostname()
 SUPERVISOR_LISTEN_PORT = 6000
+SPOUT_LISTEN_PORT = 4999
 
 class Nimbus(object):
 	def __init__(self):
@@ -55,8 +56,11 @@ class Nimbus(object):
 		print 'List of alive machine IPs is'
 		print self.machine_list
 
+		spout_node = None
 		counter = 0
 		for worker in self.config:
+			if self.config[worker]['type'] == 'spout':
+				spout_node = worker
 			self.worker_mapping[self.machine_list[counter]].append(worker)
 
 			if self.config[worker]['type'] == 'bolt':
@@ -71,10 +75,13 @@ class Nimbus(object):
 		print 'Port mapping:'
 		print self.reverse_mapping
 
+		#Find spout IP to send to everybody so they can send ACKs to spout
+		spout_ip = self.reverse_mapping[spout_node]
+
 		for worker in self.config:
+			self.config[worker]['spout_ip_port'] = (spout_ip, SPOUT_LISTEN_PORT)
 			if self.config[worker]['type'] == 'bolt':
 				self.config[worker]['listen_port'] = self.reverse_mapping[worker][1]
-			
 			try:
 				children =self.config[worker]['children']
 				self.config[worker]['children_ip_port'] = []
