@@ -22,6 +22,7 @@ MY_PORT_LISTEN_FOR_ACKS = 4999
 Forward tuple to children
 '''
 def forwardTupleToChildren(task_details, forward_tuple):
+	# TODO: If current worker is spout and it has multiple children, duplicate tuples should have separate unique tuple_id
 	children = task_details['children_ip_port'] # list
 	for child_ip, child_port in children:
 		# forward
@@ -198,7 +199,7 @@ class Spout(object):
 	def check_timeouts(self):
 		while len(self.buffer) > 0:
 			# pprint.pprint(self.buffer)			
-			for tuple_id, tuple_data in self.buffer.iteritems():
+			for tuple_id, tuple_data in self.buffer.copy().items():
 				current_time = time.time()
 				if current_time - tuple_data['timestamp'] > self.MAX_ACK_TIMEOUT:
 					# re-send tuple
