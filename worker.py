@@ -118,6 +118,13 @@ class Bolt(object):
 		self.output_file = None # initialized in start()
 
 	def start(self):
+
+		# open output file and save handle if sink
+		if self.task_details['sink']:
+			# get file name
+			output_filename = self.task_details['output']
+			self.output_file = open(output_filename, 'w', 0) # 0 to write to file immediately
+
 		t1 = threading.Thread(target = self.listen)
 		t1.daemon = True
 		t1.start()  
@@ -125,13 +132,7 @@ class Bolt(object):
 		t2 = threading.Thread(target = self.process_and_send)
 		t2.daemon = True
 		t2.start()
-
-		# open output file and save handle if sink
-		if self.task_details['sink']:
-			# get file name
-			output_filename = self.task_details['output']
-			self.output_file = open(output_filename, 'w', 0) # 0 to write to file immediately
-				
+	
 	def listen(self):
 		print "Waiting for tuples..."
 
@@ -139,7 +140,7 @@ class Bolt(object):
 			data, addr = self.sock.recvfrom(1024)
 			data = json.loads(data)
 			self.queue.put(data)
-            	
+				
 	def process_and_send(self):
 		while True:
 			item = self.queue.get()
