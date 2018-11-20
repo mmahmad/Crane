@@ -138,7 +138,7 @@ class Spout(object):
 				
 				# forward the tuple to child bolt(s)
 				forwardTupleToChildren(self.task_details, self.buffer[tuple_id], self.send_to_child_sock)
-				time.sleep(0.01)
+				time.sleep(0.001)
 
 				if not start_poll:
 					timeout_thread = threading.Thread(target = self.check_timeouts, args = ())
@@ -300,8 +300,8 @@ class Bolt(object):
 						print 'send ACK+KEEP for filtered tuple'
 						self.send_ack(tuple_id, 'KEEP')
 
-						if prob < 0.8:
-							forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
+						#if prob < 0.8:
+						forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
 				else:
 					print 'send ACK+REMOVE for filtered tuple'
 					self.send_ack(tuple_id, 'REMOVE') # in case tuple has been filtered out, spout no longer needs to keep track of this tuple
