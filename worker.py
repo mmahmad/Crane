@@ -158,7 +158,7 @@ class Spout(object):
 		while(1):
 			time.sleep(0.001)
 			# UDP			
-			data, addr = self.ack_sock.recvfrom(1024)
+			data, addr = self.ack_sock.recvfrom(1024000)
 
 			# data = client_socket.recv(1024)
 			received_data = json.loads(data)
@@ -271,7 +271,7 @@ class Bolt(object):
 
 		while (1):
 			time.sleep(0.001)
-			data, addr = self.sock.recvfrom(1024)
+			data, addr = self.sock.recvfrom(1024000)
 			data = json.loads(data)
 			self.queue.put(data)
 				
