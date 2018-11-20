@@ -152,7 +152,7 @@ class Bolt(object):
 						self.output_file.write(output)
 						self.output_file.write('\n')
 					else:
-						forwardTupleToChildren(self.task_details, output)
+						forwardTupleToChildren(self.task_details, item)
 			elif self.task_details['function_type'] == 'transform':
 				output = self.function(item)
 				if self.task_details['sink']:
