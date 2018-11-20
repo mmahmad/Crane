@@ -2,6 +2,7 @@ import socket
 import json
 import threading
 import Queue
+import time
 
 def get_process_hostname():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -84,11 +85,17 @@ Remove if ACK+REMOVE received;
 class Spout(object):
 	def __init__(self, task_details):
 		self.task_details = task_details
+		self.buffer = dict()
 	
 	def start(self):
 		print "Spout started"
 		print self.task_details
 
+		t = threading.Thread(target = self.send_data)
+		t.daemon = True
+		t.start()
+
+	def send_data(self):
 		tuple_id = 0
 
 		# read data line-by-line from source, add msgId, and forward to child bolt(s)
@@ -96,15 +103,26 @@ class Spout(object):
 			for line in infile:
 				line = line.rstrip()
 				# add a unique (auto_incremented) id to the line
-				line += ',' + str(tuple_id)
+				# line += ',' + str(tuple_id)
 
 				# split line and store as tuple
 				forward_tuple = tuple(line.split(','))
+
+				# store the tuple in buffer	
+				self.buffer[tuple_id]= {
+					'tuple_id': tuple_id,
+					'tuple': forward_tuple,
+					'timestamp': time.time() # epoch. number of seconds.
+				}
 				
 				# forward the tuple to child bolt(s)
-				forwardTupleToChildren(self.task_details, forward_tuple)
-				
+				forwardTupleToChildren(self.task_details, self.buffer[tuple_id])
 				tuple_id += 1
+				
+	def listen_for_acks(self):
+		pass		
+	def check_timeouts(self):
+		pass
 
 class Bolt(object):
 	def __init__(self, task_details):
@@ -144,24 +162,27 @@ class Bolt(object):
 	def process_and_send(self):
 		while True:
 			item = self.queue.get()
+			msgId, tuple_data = item['tuple_id'], item['tuple']
 			print "item"
-			print item
+			print msgId, tuple_data
 
 			# if bolt function is a filter, returns a boolean for each tuple
 			if self.task_details['function_type'] == 'filter':
-				output = self.function(item)
+				output = self.function(tuple_data)
 				if output: # if true, forward to next bolt
 					if self.task_details['sink']:
 						self.output_file.write((output.encode('utf-8')))
 						self.output_file.write('\n')
 					else:
+						item['tuple'] = item
 						forwardTupleToChildren(self.task_details, item)
 			elif self.task_details['function_type'] == 'transform':
-				output = self.function(item)
+				output = self.function(tuple_data)
 				if self.task_details['sink']:
 					self.output_file.write((output.encode('utf-8')))
 					self.output_file.write('\n')
 				else:
+					item['tuple'] = output
 					forwardTupleToChildren(self.task_details, output)
 			elif self.task_details['function_type'] == 'join':
 				#TODO: join()  
