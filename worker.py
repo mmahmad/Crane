@@ -153,7 +153,7 @@ class Bolt(object):
 		t2.start()
 	
 	def listen(self):
-		print "Waiting for tuples at port: " + str(self.listen_port)
+		print "Waiting for tuples..."
 
 		while (1):
 			data, addr = self.sock.recvfrom(1024)
@@ -175,7 +175,6 @@ class Bolt(object):
 						self.output_file.write((output.encode('utf-8')))
 						self.output_file.write('\n')
 					else:
-						item['tuple'] = item
 						forwardTupleToChildren(self.task_details, item)
 			elif self.task_details['function_type'] == 'transform':
 				output = self.function(tuple_data)
