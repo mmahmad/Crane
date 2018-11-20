@@ -4,6 +4,7 @@ import threading
 import Queue
 import time
 import pprint
+import random
 
 def get_process_hostname():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -207,6 +208,7 @@ class Spout(object):
 					# re-send tuple
 					tuple_data['timestamp'] = current_time
 					forwardTupleToChildren(self.task_details, tuple_data, self.send_to_child_sock)
+					print 'Resent tuple' + str(tuple_id)
 
 class Bolt(object):
 	def __init__(self, task_details):
@@ -293,10 +295,13 @@ class Bolt(object):
 						print 'send ACK+REMOVE for filtered tuple'
 						self.send_ack(tuple_id, 'REMOVE')
 					else:
+						prob = random.random()
 						# send ACK+KEEP message to spout
 						print 'send ACK+KEEP for filtered tuple'
 						self.send_ack(tuple_id, 'KEEP')
-						forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
+
+						if prob < 0.8:
+							forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
 				else:
 					print 'send ACK+REMOVE for filtered tuple'
 					self.send_ack(tuple_id, 'REMOVE') # in case tuple has been filtered out, spout no longer needs to keep track of this tuple
