@@ -24,6 +24,6 @@ W4:
   type: bolt
   sink: True
   function_type: transform
-  function: "lambda tweet: tweet[4] + ' ' + tweet[5] + ' ' + str(len(tweet[5])"
+  function: "lambda tweet: tweet[4] + ' ' + tweet[5] + ' ' + str(len(tweet[5]))"
   parents: [W2, W3]
   output: output-tweets.txt
