@@ -200,7 +200,8 @@ class Spout(object):
 	Re-send if timeout > MAX_ACK_TIMEOUT
 	'''
 	def check_timeouts(self):
-		while len(self.buffer) > 0:
+		#while len(self.buffer) > 0:
+		while True:
 			# pprint.pprint(self.buffer)			
 			for tuple_id, tuple_data in self.buffer.copy().items():
 				current_time = time.time()
