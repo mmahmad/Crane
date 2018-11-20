@@ -152,7 +152,7 @@ class Bolt(object):
 		t2.start()
 	
 	def listen(self):
-		print "Waiting for tuples..."
+		print "Waiting for tuples at port: " + str(self.listen_port)
 
 		while (1):
 			data, addr = self.sock.recvfrom(1024)
@@ -183,7 +183,7 @@ class Bolt(object):
 					self.output_file.write('\n')
 				else:
 					item['tuple'] = output
-					forwardTupleToChildren(self.task_details, output)
+					forwardTupleToChildren(self.task_details, item)
 			elif self.task_details['function_type'] == 'join':
 				#TODO: join()  
 				pass
