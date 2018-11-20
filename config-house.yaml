@@ -8,7 +8,7 @@ W2:
   type: bolt
   sink: False
   function_type: filter
-  function: "lambda house: int(house[0]) > 80000"
+  function: "lambda house: int(house[0]) > 70000"
   parents: [W1]
   children: [W3]
 
