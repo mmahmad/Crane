@@ -151,11 +151,8 @@ class Spout(object):
 			
 			# TCP
 			client_socket, address = self.ack_sock.accept()
-			data = client_socket.recv(1024)
-			data = json.loads(data.strip())
-			print 'ack received for tuple with id: ' + str(data['tuple_id'])
 			
-			t = threading.Thread(target = self.process_acks, args=(data, ))
+			t = threading.Thread(target = self.process_acks, args=(client_socket, address))
 			t.daemon = True
 			t.start()
 
@@ -166,8 +163,11 @@ class Spout(object):
 			'tuple_id': 31
 		}
 	'''
-	def process_acks(self, received_data):
+	def process_acks(self, client_socket, address):
+		data = client_socket.recv(1024)
+		received_data = json.loads(data.strip())
 
+		print 'ack received for tuple with id: ' + str(data['tuple_id'])
 		# If received data has type=='KEEP', update timestamp
 		if received_data['type'].upper() == 'KEEP':
 			self.buffer[received_data['tuple_id']]['timestamp'] = time.time()
