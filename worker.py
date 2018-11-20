@@ -165,6 +165,8 @@ class Spout(object):
 	'''
 	def process_acks(self, client_socket, address):
 		data = client_socket.recv(1024)
+		print 'tcp data'
+		print data
 		received_data = json.loads(data.strip())
 
 		print 'ack received for tuple with id: ' + str(data['tuple_id'])
