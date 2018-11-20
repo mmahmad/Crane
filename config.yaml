@@ -3,12 +3,12 @@ W1:
   sink: False
   input: tweets.csv
   children: [W2]
-  
+
 W2:
   type: bolt
   sink: False
   function_type: filter
-  function: "lambda tweet: len(tweet[7]) > 10"
+  function: "lambda tweet: len(tweet[7]) > 50"
   parents: [W1]
   children: [W3]
 

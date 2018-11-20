@@ -1,6 +1,7 @@
 import socket
 import json
 import threading
+import Queue
 
 def get_process_hostname():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -14,6 +15,22 @@ NIMBUS_PORT = 20000
 MY_HOSTNAME = get_process_hostname()
 MY_PORT_LISTEN_FOR_JOB = 6000
 
+'''
+Forward tuple to children
+'''
+def forwardTupleToChildren(task_details, forward_tuple):
+	children = task_details['children_ip_port'] # list
+	for child_ip, child_port in children:
+		# forward
+		try:
+			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+			sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+			sock.sendto(json.dumps(forward_tuple), (child_ip, child_port))
+		except:
+			print 'Unable to contact child'
+			print str(child_ip) + ":" + str(child_port)
+			return
+			
 class Supervisor(object):
 	def __init__(self):
 		# join the fun
@@ -22,6 +39,10 @@ class Supervisor(object):
 			sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 			data = {"type": "JOIN_WORKER"}
 			sock.sendto(json.dumps(data), (NIMBUS_HOSTNAME, NIMBUS_PORT))
+			print "MY_IP:"
+			print MY_HOSTNAME
+
+
 		except:
 			print 'Unable to contact nimbus'
 			return
@@ -79,21 +100,11 @@ class Spout(object):
 
 				# split line and store as tuple
 				forward_tuple = tuple(line.split(','))
-
-				children = self.task_details['children_ip_port'] # list
-				for child_ip, child_port in children:
-					# forward
-					try:
-						sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-						sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-						sock.sendto(json.dumps(forward_tuple), (child_ip, child_port))
-					except:
-						print 'Unable to contact child'
-						print str(child_ip) + ":" + str(child_port)
-						return
-
+				
+				# forward the tuple to child bolt(s)
+				forwardTupleToChildren(self.task_details, forward_tuple)
+				
 				tuple_id += 1
-
 
 class Bolt(object):
 	def __init__(self, task_details):
@@ -102,20 +113,57 @@ class Bolt(object):
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self.sock.bind((get_process_hostname(), self.listen_port))
+		self.queue = Queue.Queue()
+		self.function = eval(self.task_details['function'])
+		self.output_file = None # initialized in start()
 
 	def start(self):
 		t1 = threading.Thread(target = self.listen)
 		t1.daemon = True
 		t1.start()  
-					
+
+		t2 = threading.Thread(target = self.process_and_send)
+		t2.daemon = True
+		t2.start()
+
+		# open output file and save handle if sink
+		if self.task_details['sink']:
+			# get file name
+			output_filename = self.task_details['output']
+			self.output_file = open(output_filename, 'w', 0) # 0 to write to file immediately
+				
 	def listen(self):
 		print "Waiting for tuples..."
 
 		while (1):
 			data, addr = self.sock.recvfrom(1024)
 			data = json.loads(data)
-			print data
+			self.queue.put(data)
+            	
+	def process_and_send(self):
+		while True:
+			item = self.queue.get()
 
+			# if bolt function is a filter, returns a boolean for each tuple
+			if self.task_details['function_type'] == 'filter':
+				output = self.function(item)
+				if output: # if true, forward to next bolt
+					if self.task_details['sink']:
+						self.output_file.write(output)
+						self.output_file.write('\n')
+					else:
+						forwardTupleToChildren(self.task_details, output)
+			elif self.task_details['function_type'] == 'transform':
+				output = self.function(item)
+				if self.task_details['sink']:
+					self.output_file.write(output)
+					self.output_file.write('\n')
+				else:
+					forwardTupleToChildren(self.task_details, output)
+			elif self.task_details['function_type'] == 'join':
+				#TODO: join()  
+				pass
+		
 def main():
 	# supervisor connects to nimbus to let it know that it is available
 	supervisor = Supervisor()
