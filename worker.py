@@ -189,11 +189,11 @@ class Spout(object):
 
 		# else if received data has type=='REMOVE', remove from buffer
 		elif received_data['type'].upper() == 'REMOVE':
-			print 'length of buffer before removal: '
-			print len(self.buffer)
+			# print 'length of buffer before removal: '
+			# print len(self.buffer)
 			del self.buffer[received_data['tuple_id']]
-			print 'length of buffer after removal: '
-			print len(self.buffer)
+			# print 'length of buffer after removal: '
+			# print len(self.buffer)
 
 	'''
 	Continuosly loop through buffer to see if any bolt has timed-out (ack not received).
