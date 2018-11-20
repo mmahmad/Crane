@@ -88,9 +88,17 @@ class Spout(object):
 	def __init__(self, task_details):
 		self.task_details = task_details
 		self.buffer = dict()
-		self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		self.ack_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		self.ack_sock.bind((get_process_hostname(), MY_PORT_LISTEN_FOR_ACKS))
+		# UDP
+		#---------
+		# self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		# self.ack_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		# self.ack_sock.bind((get_process_hostname(), MY_PORT_LISTEN_FOR_ACKS))
+
+		# TCP
+		#---------
+		self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.ack_sock.bind((socket.gethostname(), MY_PORT_LISTEN_FOR_ACKS))
+		self.ack_sock.listen(5) # listen to max 5 bolts'
 		
 	
 	def start(self):
@@ -138,7 +146,12 @@ class Spout(object):
 	def listen_for_acks(self):
 
 		while(1):
-			data, addr = self.ack_sock.recvfrom(1024)
+			# UDP
+			# data, addr = self.ack_sock.recvfrom(1024)
+			
+			# TCP
+			(client_socket, address) = self.ack_sock.accept()
+			data = self.ack_sock.recv(1024)
 			data = json.loads(data)
 			print 'ack received for tuple with id: ' + str(data['tuple_id'])
 			
@@ -190,18 +203,24 @@ class Bolt(object):
 			'type': msg_type,
 			'tuple_id': tuple_id
 		}
-		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		sock.sendto(json.dumps(ack_message), (self.spout_ip, self.spout_port))
+		self.ack_socket.sendall(json.dumps(ack_message))
 
 	def start(self):
-
 		# open output file and save handle if sink
 		if self.task_details['sink']:
 			# get file name
 			output_filename = self.task_details['output']
 			self.output_file = open(output_filename, 'w', 0) # 0 to write to file immediately
 
+		#Create outgoing TCP connection to send ACKs
+		try:
+			self.ack_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			self.ack_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+			self.ack_socket.connect((self.spout_ip, self.spout_port))
+		except socket.error as e: #If connection to remote machine fails
+			print 'Could not connect to ' + str(self.spout_ip)
+			return
+				
 		t1 = threading.Thread(target = self.listen)
 		t1.daemon = True
 		t1.start()  
