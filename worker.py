@@ -204,7 +204,7 @@ class Spout(object):
 			# pprint.pprint(self.buffer)			
 			for tuple_id, tuple_data in self.buffer.copy().items():
 				current_time = time.time()
-				print current_time
+				# print current_time
 				if current_time - tuple_data['timestamp'] > self.MAX_ACK_TIMEOUT:
 					# re-send tuple
 					tuple_data['timestamp'] = current_time
