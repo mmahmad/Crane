@@ -1,14 +1,14 @@
 W1:
   type: spout
   sink: False
-  input: tweets.csv
+  input: modified_house_data.csv
   children: [W2]
 
 W2:
   type: bolt
   sink: False
   function_type: filter
-  function: "lambda tweet: len(tweet[7]) > 50"
+  function: "lambda house: int(house[0]) > 80000"
   parents: [W1]
   children: [W3]
 
@@ -16,6 +16,6 @@ W3:
   type: bolt
   sink: True
   function_type: transform
-  function: "lambda tweet: tweet[7] + '123'"
+  function: "lambda house: house[0] + 'hello world'"
   parents: [W2]
-  output: modified_tweets.txt
+  output: modified_house_data.txt
