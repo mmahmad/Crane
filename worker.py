@@ -44,8 +44,6 @@ class Supervisor(object):
 			sock.sendto(json.dumps(data), (NIMBUS_HOSTNAME, NIMBUS_PORT))
 			print "MY_IP:"
 			print MY_HOSTNAME
-
-
 		except:
 			print 'Unable to contact nimbus'
 			return
@@ -158,6 +156,7 @@ class Spout(object):
 
 	def listen_for_acks(self):
 		while(1):
+			time.sleep(0.001)
 			# UDP			
 			data, addr = self.ack_sock.recvfrom(1024)
 
@@ -271,6 +270,7 @@ class Bolt(object):
 		print "Waiting for tuples..."
 
 		while (1):
+			time.sleep(0.001)
 			data, addr = self.sock.recvfrom(1024)
 			data = json.loads(data)
 			self.queue.put(data)
