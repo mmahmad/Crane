@@ -2,20 +2,28 @@ W1:
   type: spout
   sink: False
   input: tweets.csv
-  children: [W2]
+  children: [W2, W3]
 
 W2:
   type: bolt
   sink: False
   function_type: filter
-  function: "lambda tweet: int(house[0]) > 80000"
+  function: "lambda tweet: tweet[4].startswith('a')"
   parents: [W1]
-  children: [W3]
+  children: [W4]
 
-W3:
+W3: 
+  type: bolt
+  sink: False
+  function_type: filter
+  function: "lambda tweet: len(tweet[5]) > 50"
+  parents: [W1]
+  children: [W4]
+
+W4:
   type: bolt
   sink: True
   function_type: transform
-  function: "lambda house: house[0] + 'hello world'"
-  parents: [W2]
-  output: modified_house_data.txt
+  function: "lambda tweet: tweet[4] + ' ' + tweet[5] + ' ' + str(len(tweet[5])"
+  parents: [W2, W3]
+  output: output-tweets.txt
