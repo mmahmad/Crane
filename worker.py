@@ -3,6 +3,7 @@ import json
 import threading
 import Queue
 import time
+import pprint
 
 def get_process_hostname():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -196,6 +197,7 @@ class Spout(object):
 	'''
 	def check_timeouts(self):
 		while len(self.buffer) > 0:
+			pprint.pprint(self.buffer)			
 			for tuple_id, tuple_data in self.buffer.iteritems():
 				current_time = time.time()
 				if current_time - tuple_data['timestamp'] > self.MAX_ACK_TIMEOUT:
@@ -280,9 +282,11 @@ class Bolt(object):
 					if self.task_details['sink']:
 						self.output_file.write((output.encode('utf-8')))
 						self.output_file.write('\n')
+						print 'send ACK+REMOVE for filtered tuple'
 						self.send_ack(tuple_id, 'REMOVE')
 					else:
 						# send ACK+KEEP message to spout
+						print 'send ACK+KEEP for filtered tuple'
 						self.send_ack(tuple_id, 'KEEP')
 						forwardTupleToChildren(self.task_details, item)
 				else:
@@ -296,11 +300,13 @@ class Bolt(object):
 						# send ACK+REMOVE message to spout
 						self.output_file.write((output.encode('utf-8')))
 						self.output_file.write('\n')
+						print 'send ACK+REMOVE for transformed tuple'
 						self.send_ack(tuple_id, 'REMOVE')
 					else:
 						item['tuple'] = output
 						# send ACK+KEEP message to spout
 						forwardTupleToChildren(self.task_details, item)
+						print 'send ACK+KEEP for transformed tuple'
 						self.send_ack(tuple_id, 'KEEP')						
 			elif self.task_details['function_type'] == 'join':
 				#TODO: join()  

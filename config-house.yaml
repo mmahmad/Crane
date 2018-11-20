@@ -1,7 +1,7 @@
 W1:
   type: spout
   sink: False
-  input: modified_house_data.csv
+  input: small_data.csv
   children: [W2]
 
 W2:
