@@ -143,6 +143,8 @@ class Bolt(object):
 	def process_and_send(self):
 		while True:
 			item = self.queue.get()
+			print "item"
+			print item
 
 			# if bolt function is a filter, returns a boolean for each tuple
 			if self.task_details['function_type'] == 'filter':
@@ -156,7 +158,7 @@ class Bolt(object):
 			elif self.task_details['function_type'] == 'transform':
 				output = self.function(item)
 				if self.task_details['sink']:
-					self.output_file.write(output)
+					self.output_file.encode('utf-8').write(output)
 					self.output_file.write('\n')
 				else:
 					forwardTupleToChildren(self.task_details, output)
