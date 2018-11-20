@@ -90,15 +90,15 @@ class Spout(object):
 		self.buffer = dict()
 		# UDP
 		#---------
-		# self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		# self.ack_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		# self.ack_sock.bind((get_process_hostname(), MY_PORT_LISTEN_FOR_ACKS))
+		self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		self.ack_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		self.ack_sock.bind((get_process_hostname(), MY_PORT_LISTEN_FOR_ACKS))
 
 		# TCP
 		#---------
-		self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.ack_sock.bind((socket.gethostname(), MY_PORT_LISTEN_FOR_ACKS))
-		self.ack_sock.listen(5) # listen to max 5 bolts'
+		# self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		# self.ack_sock.bind((socket.gethostname(), MY_PORT_LISTEN_FOR_ACKS))
+		# self.ack_sock.listen(5) # listen to max 5 bolts'
 		
 	
 	def start(self):
@@ -147,12 +147,17 @@ class Spout(object):
 
 		while(1):
 			# UDP
-			# data, addr = self.ack_sock.recvfrom(1024)
+			data, addr = self.ack_sock.recvfrom(1024)
+
+			# data = client_socket.recv(1024)
+			received_data = json.loads(data)
+
+			print 'ack received for tuple with id: ' + str(data['tuple_id'])
 			
 			# TCP
-			client_socket, address = self.ack_sock.accept()
+			# client_socket, address = self.ack_sock.accept()
 			
-			t = threading.Thread(target = self.process_acks, args=(client_socket, address))
+			t = threading.Thread(target = self.process_acks, args=(received_data,))
 			t.daemon = True
 			t.start()
 
@@ -163,13 +168,8 @@ class Spout(object):
 			'tuple_id': 31
 		}
 	'''
-	def process_acks(self, client_socket, address):
-		data = client_socket.recv(1024)
-		print 'tcp data'
-		print data
-		received_data = json.loads(data.strip())
+	def process_acks(self, received_data):
 
-		print 'ack received for tuple with id: ' + str(data['tuple_id'])
 		# If received data has type=='KEEP', update timestamp
 		if received_data['type'].upper() == 'KEEP':
 			self.buffer[received_data['tuple_id']]['timestamp'] = time.time()
@@ -205,7 +205,17 @@ class Bolt(object):
 			'type': msg_type,
 			'tuple_id': tuple_id
 		}
-		self.ack_socket.sendall(json.dumps(ack_message))
+		
+		# TCP
+		# self.ack_socket.sendall(json.dumps(ack_message))
+		try:
+			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+			sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+			sock.sendto(json.dumps(ack_message), (self.spout_ip, self.spout_port))
+		except Exception as e:
+			print e
+			print 'Unable to contact spout'
+			return
 
 	def start(self):
 		# open output file and save handle if sink
@@ -215,13 +225,13 @@ class Bolt(object):
 			self.output_file = open(output_filename, 'w', 0) # 0 to write to file immediately
 
 		#Create outgoing TCP connection to send ACKs
-		try:
-			self.ack_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			self.ack_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-			self.ack_socket.connect((self.spout_ip, self.spout_port))
-		except socket.error as e: #If connection to remote machine fails
-			print 'Could not connect to ' + str(self.spout_ip)
-			return
+		# try:
+		# 	self.ack_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		# 	self.ack_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		# 	self.ack_socket.connect((self.spout_ip, self.spout_port))
+		# except socket.error as e: #If connection to remote machine fails
+		# 	print 'Could not connect to ' + str(self.spout_ip)
+		# 	return
 				
 		t1 = threading.Thread(target = self.listen)
 		t1.daemon = True
