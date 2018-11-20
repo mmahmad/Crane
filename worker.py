@@ -15,6 +15,7 @@ NIMBUS_PORT = 20000
 
 MY_HOSTNAME = get_process_hostname()
 MY_PORT_LISTEN_FOR_JOB = 6000
+MY_PORT_LISTEN_FOR_ACKS = 4999
 
 '''
 Forward tuple to children
@@ -87,24 +88,30 @@ class Spout(object):
 	def __init__(self, task_details):
 		self.task_details = task_details
 		self.buffer = dict()
+		self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		self.ack_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		self.ack_sock.bind((get_process_hostname(), MY_PORT_LISTEN_FOR_ACKS))
+		
 	
 	def start(self):
 		print "Spout started"
 		print self.task_details
 
-		t = threading.Thread(target = self.send_data)
-		t.daemon = True
-		t.start()
+		t1 = threading.Thread(target = self.send_data)
+		t1.daemon = True
+		t1.start()
+
+		t2 = threading.Thread(target = self.listen_for_acks)
+		t2.daemon = True
+		t2.start()
 
 	def send_data(self):
-		tuple_id = 0
+		tuple_id = 0 # incremented tuple_id added to each tuple
 
 		# read data line-by-line from source, add msgId, and forward to child bolt(s)
 		with open('input/' + self.task_details['input']) as infile:
 			for line in infile:
 				line = line.rstrip()
-				# add a unique (auto_incremented) id to the line
-				# line += ',' + str(tuple_id)
 
 				# split line and store as tuple
 				forward_tuple = tuple(line.split(','))
@@ -119,10 +126,42 @@ class Spout(object):
 				# forward the tuple to child bolt(s)
 				forwardTupleToChildren(self.task_details, self.buffer[tuple_id])
 				tuple_id += 1
-				
+		
+		while True:
+			time.sleep(3)
+			if len(self.buffer) == 0:
+				print 'Job completed'
+				return
+
 	def listen_for_acks(self):
-		pass		
+		while(1):
+			data, addr = self.ack_sock.recvfrom(1024)
+			print 'ack received'
+			data = json.loads(data)
+			
+			t = threading.Thread(target = self.process_acks, args=(data))
+			t.daemon = True
+			t.start()
+
+	'''
+	received_data: 
+		{
+			'type': 'KEEP' / 'REMOVE'
+			'tuple_id': 31
+		}
+	'''
+	def process_acks(self, received_data):
+
+		# If received data has type=='KEEP', update timestamp
+		if received_data['type'].upper() == 'KEEP':
+			self.buffer[received_data['tuple_id']]['timestamp'] = time.time()
+
+		# else if received data has type=='REMOVE', remove from buffer
+		elif received_data['type'].upper() == 'REMOVE':
+			del self.buffer[received_data['tuple_id']]
+
 	def check_timeouts(self):
+		# TODO:
 		pass
 
 class Bolt(object):
@@ -135,6 +174,17 @@ class Bolt(object):
 		self.queue = Queue.Queue()
 		self.function = eval(self.task_details['function'])
 		self.output_file = None # initialized in start()
+		self.spout_ip, self.spout_port = self.task_details['spout_ip_port']
+
+	def send_ack(self, tuple_id, msg_type):
+		# send ACK+REMOVE message to spout
+		ack_message = {
+			'type': msg_type,
+			'tuple_id': tuple_id
+		}
+		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		sock.sendto(json.dumps(ack_message), (self.spout_ip, self.spout_port))
 
 	def start(self):
 
@@ -163,9 +213,9 @@ class Bolt(object):
 	def process_and_send(self):
 		while True:
 			item = self.queue.get()
-			msgId, tuple_data = item['tuple_id'], item['tuple']
+			tuple_id, tuple_data = item['tuple_id'], item['tuple']
 			print "item"
-			print msgId, tuple_data
+			print tuple_id, tuple_data
 
 			# if bolt function is a filter, returns a boolean for each tuple
 			if self.task_details['function_type'] == 'filter':
@@ -174,16 +224,27 @@ class Bolt(object):
 					if self.task_details['sink']:
 						self.output_file.write((output.encode('utf-8')))
 						self.output_file.write('\n')
+						self.send_ack(tuple_id, 'REMOVE')
 					else:
+						# send ACK+KEEP message to spout
+						self.send_ack(tuple_id, 'KEEP')
 						forwardTupleToChildren(self.task_details, item)
+				else:
+					self.send_ack(tuple_id, 'REMOVE') # in case tuple has been filtered out, spout no longer needs to keep track of this tuple
+
 			elif self.task_details['function_type'] == 'transform':
 				output = self.function(tuple_data)
-				if self.task_details['sink']:
-					self.output_file.write((output.encode('utf-8')))
-					self.output_file.write('\n')
-				else:
-					item['tuple'] = output
-					forwardTupleToChildren(self.task_details, item)
+				if output:
+					if self.task_details['sink']:
+						# send ACK+REMOVE message to spout
+						self.output_file.write((output.encode('utf-8')))
+						self.output_file.write('\n')
+						self.send_ack(tuple_id, 'REMOVE')
+					else:
+						item['tuple'] = output
+						# send ACK+KEEP message to spout
+						forwardTupleToChildren(self.task_details, item)
+						self.send_ack(tuple_id, 'KEEP')						
 			elif self.task_details['function_type'] == 'join':
 				#TODO: join()  
 				pass
