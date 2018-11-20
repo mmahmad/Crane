@@ -128,6 +128,9 @@ class Spout(object):
 				tuple_id += 1
 		
 		while True:
+			print self.buffer
+			print 'length of buffer'
+			print len(buffer)
 			time.sleep(3)
 			if len(self.buffer) == 0:
 				print 'Job completed'
