@@ -21,14 +21,12 @@ MY_PORT_LISTEN_FOR_ACKS = 4999
 '''
 Forward tuple to children
 '''
-def forwardTupleToChildren(task_details, forward_tuple):
+def forwardTupleToChildren(task_details, forward_tuple, sock):
 	# TODO: If current worker is spout and it has multiple children, duplicate tuples should have separate unique tuple_id
 	children = task_details['children_ip_port'] # list
 	for child_ip, child_port in children:
 		# forward
 		try:
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 			sock.sendto(json.dumps(forward_tuple), (child_ip, child_port))
 		except Exception as e:
 			print e
@@ -97,6 +95,10 @@ class Spout(object):
 		self.ack_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self.ack_sock.bind((get_process_hostname(), MY_PORT_LISTEN_FOR_ACKS))
 
+		# socket for sending tuples to child to avoid creating socket for each tuple
+		self.send_to_child_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		self.send_to_child_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
 		# TCP
 		#---------
 		# self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -136,7 +138,7 @@ class Spout(object):
 				}
 				
 				# forward the tuple to child bolt(s)
-				forwardTupleToChildren(self.task_details, self.buffer[tuple_id])
+				forwardTupleToChildren(self.task_details, self.buffer[tuple_id], self.send_to_child_sock)
 				
 				if not start_poll:
 					timeout_thread = threading.Thread(target = self.check_timeouts, args = ())
@@ -204,7 +206,7 @@ class Spout(object):
 				if current_time - tuple_data['timestamp'] > self.MAX_ACK_TIMEOUT:
 					# re-send tuple
 					tuple_data['timestamp'] = current_time
-					forwardTupleToChildren(self.task_details, tuple_data)
+					forwardTupleToChildren(self.task_details, tuple_data, self.send_to_child_sock)
 
 class Bolt(object):
 	def __init__(self, task_details):
@@ -217,8 +219,13 @@ class Bolt(object):
 		self.function = eval(self.task_details['function'])
 		self.output_file = None # initialized in start()
 		self.spout_ip, self.spout_port = self.task_details['spout_ip_port']
-		self.tuple_counter = 0
 
+		self.send_to_child_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		self.send_to_child_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+		self.send_ack_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		self.send_ack_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		
 	def send_ack(self, tuple_id, msg_type):
 		# send ACK+REMOVE message to spout
 		ack_message = {
@@ -229,9 +236,7 @@ class Bolt(object):
 		# TCP
 		# self.ack_socket.sendall(json.dumps(ack_message))
 		try:
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-			sock.sendto(json.dumps(ack_message), (self.spout_ip, self.spout_port))
+			self.send_to_child_sock.sendto(json.dumps(ack_message), (self.spout_ip, self.spout_port))
 		except Exception as e:
 			print e
 			print 'Unable to contact spout'
@@ -244,6 +249,7 @@ class Bolt(object):
 			output_filename = self.task_details['output']
 			self.output_file = open(output_filename, 'w', 0) # 0 to write to file immediately
 
+							
 		#Create outgoing TCP connection to send ACKs
 		# try:
 		# 	self.ack_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -289,7 +295,7 @@ class Bolt(object):
 						# send ACK+KEEP message to spout
 						print 'send ACK+KEEP for filtered tuple'
 						self.send_ack(tuple_id, 'KEEP')
-						forwardTupleToChildren(self.task_details, item)
+						forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
 				else:
 					print 'send ACK+REMOVE for filtered tuple'
 					self.send_ack(tuple_id, 'REMOVE') # in case tuple has been filtered out, spout no longer needs to keep track of this tuple
@@ -306,7 +312,7 @@ class Bolt(object):
 					else:
 						item['tuple'] = output
 						# send ACK+KEEP message to spout
-						forwardTupleToChildren(self.task_details, item)
+						forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
 						print 'send ACK+KEEP for transformed tuple'
 						self.send_ack(tuple_id, 'KEEP')						
 			elif self.task_details['function_type'] == 'join':
