@@ -197,7 +197,7 @@ class Spout(object):
 	'''
 	def check_timeouts(self):
 		while len(self.buffer) > 0:
-			pprint.pprint(self.buffer)			
+			# pprint.pprint(self.buffer)			
 			for tuple_id, tuple_data in self.buffer.iteritems():
 				current_time = time.time()
 				if current_time - tuple_data['timestamp'] > self.MAX_ACK_TIMEOUT:
