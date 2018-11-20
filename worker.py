@@ -27,7 +27,8 @@ def forwardTupleToChildren(task_details, forward_tuple):
 			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 			sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 			sock.sendto(json.dumps(forward_tuple), (child_ip, child_port))
-		except:
+		except Exception as e:
+			print e
 			print 'Unable to contact child'
 			print str(child_ip) + ":" + str(child_port)
 			return
