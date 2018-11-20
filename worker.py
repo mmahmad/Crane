@@ -150,8 +150,8 @@ class Spout(object):
 			# data, addr = self.ack_sock.recvfrom(1024)
 			
 			# TCP
-			(client_socket, address) = self.ack_sock.accept()
-			data = self.ack_sock.recv(1024)
+			client_socket, address = self.ack_sock.accept()
+			data = client_socket.recv(1024)
 			data = json.loads(data)
 			print 'ack received for tuple with id: ' + str(data['tuple_id'])
 			
