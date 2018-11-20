@@ -88,6 +88,7 @@ class Spout(object):
 	def __init__(self, task_details):
 		self.task_details = task_details
 		self.buffer = dict()
+		self.MAX_ACK_TIMEOUT = 1 # 1 second timeout		
 		# UDP
 		#---------
 		self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -114,6 +115,7 @@ class Spout(object):
 		t2.start()
 
 	def send_data(self):
+		start_poll = False													
 		tuple_id = 0 # incremented tuple_id added to each tuple
 
 		# read data line-by-line from source, add msgId, and forward to child bolt(s)
@@ -133,6 +135,13 @@ class Spout(object):
 				
 				# forward the tuple to child bolt(s)
 				forwardTupleToChildren(self.task_details, self.buffer[tuple_id])
+				
+				if not start_poll:
+					timeout_thread = threading.Thread(target = self.check_timeouts, args = ())
+					timeout_thread.daemon = True
+					timeout_thread.start()
+					start_poll = True
+
 				tuple_id += 1
 		
 		while True:
@@ -144,9 +153,8 @@ class Spout(object):
 				return
 
 	def listen_for_acks(self):
-
 		while(1):
-			# UDP
+			# UDP			
 			data, addr = self.ack_sock.recvfrom(1024)
 
 			# data = client_socket.recv(1024)
@@ -169,7 +177,7 @@ class Spout(object):
 		}
 	'''
 	def process_acks(self, received_data):
-
+		
 		# If received data has type=='KEEP', update timestamp
 		if received_data['type'].upper() == 'KEEP':
 			self.buffer[received_data['tuple_id']]['timestamp'] = time.time()
@@ -182,9 +190,18 @@ class Spout(object):
 			print 'length of buffer after removal: '
 			print len(self.buffer)
 
+	'''
+	Continuosly loop through buffer to see if any bolt has timed-out (ack not received).
+	Re-send if timeout > MAX_ACK_TIMEOUT
+	'''
 	def check_timeouts(self):
-		# TODO:
-		pass
+		while len(self.buffer) > 0:
+			for tuple_id, tuple_data in self.buffer.iteritems():
+				current_time = time.time()
+				if current_time - tuple_data['timestamp'] > self.MAX_ACK_TIMEOUT:
+					# re-send tuple
+					tuple_data['timestamp'] = current_time
+					forwardTupleToChildren(self.task_details, tuple_data)
 
 class Bolt(object):
 	def __init__(self, task_details):
