@@ -182,6 +182,7 @@ class Bolt(object):
 		self.function = eval(self.task_details['function'])
 		self.output_file = None # initialized in start()
 		self.spout_ip, self.spout_port = self.task_details['spout_ip_port']
+		self.tuple_counter = 0
 
 	def send_ack(self, tuple_id, msg_type):
 		# send ACK+REMOVE message to spout
@@ -237,6 +238,7 @@ class Bolt(object):
 						self.send_ack(tuple_id, 'KEEP')
 						forwardTupleToChildren(self.task_details, item)
 				else:
+					print 'send ACK+REMOVE for filtered tuple'
 					self.send_ack(tuple_id, 'REMOVE') # in case tuple has been filtered out, spout no longer needs to keep track of this tuple
 
 			elif self.task_details['function_type'] == 'transform':
