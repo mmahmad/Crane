@@ -137,7 +137,7 @@ class Spout(object):
 				
 				# forward the tuple to child bolt(s)
 				forwardTupleToChildren(self.task_details, self.buffer[tuple_id], self.send_to_child_sock)
-				time.sleep(0.1)
+				time.sleep(0.01)
 
 				if not start_poll:
 					timeout_thread = threading.Thread(target = self.check_timeouts, args = ())
@@ -157,19 +157,14 @@ class Spout(object):
 
 	def listen_for_acks(self):
 		while(1):
-			time.sleep(0.001)
+			# time.sleep(0.01)
 			# UDP			
 			data, addr = self.ack_sock.recvfrom(1024000)
-
-			# data = client_socket.recv(1024)
-			received_data = json.loads(data)
-
-			print 'ack received for tuple with id: ' + str(received_data['tuple_id'])
 			
 			# TCP
 			# client_socket, address = self.ack_sock.accept()
 			
-			t = threading.Thread(target = self.process_acks, args=(received_data,))
+			t = threading.Thread(target = self.process_acks, args=(data,))
 			t.daemon = True
 			t.start()
 
@@ -180,7 +175,12 @@ class Spout(object):
 			'tuple_id': 31
 		}
 	'''
-	def process_acks(self, received_data):
+	def process_acks(self, data):
+
+		# data = client_socket.recv(1024)
+		received_data = json.loads(data)
+
+		print 'ack received for tuple with id: ' + str(received_data['tuple_id'])
 		
 		# If received data has type=='KEEP', update timestamp
 		if received_data['type'].upper() == 'KEEP':
@@ -271,7 +271,7 @@ class Bolt(object):
 		print "Waiting for tuples..."
 
 		while (1):
-			time.sleep(0.001)
+			# time.sleep(0.001)
 			data, addr = self.sock.recvfrom(1024000)
 			data = json.loads(data)
 			self.queue.put(data)
