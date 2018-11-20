@@ -128,7 +128,6 @@ class Spout(object):
 				tuple_id += 1
 		
 		while True:
-			print self.buffer
 			print 'length of buffer'
 			print len(self.buffer)
 			time.sleep(3)
@@ -137,7 +136,7 @@ class Spout(object):
 				return
 
 	def listen_for_acks(self):
-		
+
 		while(1):
 			data, addr = self.ack_sock.recvfrom(1024)
 			print 'ack received'
@@ -162,7 +161,11 @@ class Spout(object):
 
 		# else if received data has type=='REMOVE', remove from buffer
 		elif received_data['type'].upper() == 'REMOVE':
+			print 'length of buffer before removal: '
+			print len(self.buffer)
 			del self.buffer[received_data['tuple_id']]
+			print 'length of buffer after removal: '
+			print len(self.buffer)
 
 	def check_timeouts(self):
 		# TODO:
