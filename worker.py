@@ -75,7 +75,7 @@ class Spout(object):
 			for line in infile:
 				line = line.rstrip()
 				# add a unique (auto_incremented) id to the line
-				line = str(tuple_id) + ',' + line
+				line += ',' + str(tuple_id)
 
 				# split line and store as tuple
 				forward_tuple = tuple(line.split(','))
