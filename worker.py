@@ -139,8 +139,8 @@ class Spout(object):
 
 		while(1):
 			data, addr = self.ack_sock.recvfrom(1024)
-			print 'ack received'
 			data = json.loads(data)
+			print 'ack received for tuple with id: ' + str(data['tuple_id'])
 			
 			t = threading.Thread(target = self.process_acks, args=(data, ))
 			t.daemon = True
