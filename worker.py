@@ -130,13 +130,14 @@ class Spout(object):
 		while True:
 			print self.buffer
 			print 'length of buffer'
-			print len(buffer)
+			print len(self.buffer)
 			time.sleep(3)
 			if len(self.buffer) == 0:
 				print 'Job completed'
 				return
 
 	def listen_for_acks(self):
+		
 		while(1):
 			data, addr = self.ack_sock.recvfrom(1024)
 			print 'ack received'
