@@ -219,22 +219,34 @@ class Spout(object):
 	'''
 	def check_timeouts(self):
 		#while len(self.buffer) > 0:
-		while True:
-			buffer_copy_len = len(self.buffer.copy())
+		# while True:
+		# 	buffer_copy_len = len(self.buffer.copy())
 			
-			for i in range(buffer_copy_len):
+		# 	for i in range(buffer_copy_len):
+		# 		tuple_id, tuple_data = self.buffer.keys()[i], self.buffer.values()[i]			
+		# 		if time.time() - tuple_data['timestamp'] > self.MAX_ACK_TIMEOUT:
+		# 			# check if tuple is still there in self.buffer (possible that it was removed by now due to listen_for_ack thread's action)
+		# 			# if tuple_id in self.buffer:
+		# 			# re-send tuple
+		# 			forwardTupleToChildren(self.task_details, tuple_data, self.send_to_child_sock)
+		# 			self.buffer[tuple_id]['timestamp'] = time.time()
+		# 			print 'Resent tuple' + str(tuple_id)
+		# 			# else:
+		# 				# print "Cannot update timestamp. Tuple already deleted!"
 
-				tuple_id, tuple_data = self.buffer.keys()[i], self.buffer.values()[i]			
-				
+		while True:
+			buffer_copy = self.buffer.copy()			
+			for tuple_id, tuple_data in buffer_copy.items():
+				# current_time = time.time()
 				if time.time() - tuple_data['timestamp'] > self.MAX_ACK_TIMEOUT:
 					# check if tuple is still there in self.buffer (possible that it was removed by now due to listen_for_ack thread's action)
-					# if tuple_id in self.buffer:
+					if tuple_id in self.buffer:
 					# re-send tuple
-					forwardTupleToChildren(self.task_details, tuple_data, self.send_to_child_sock)
-					self.buffer[tuple_id]['timestamp'] = time.time()
-					print 'Resent tuple' + str(tuple_id)
-					# else:
-						# print "Cannot update timestamp. Tuple already deleted!"
+						self.buffer[tuple_id]['timestamp'] = time.time()
+						forwardTupleToChildren(self.task_details, tuple_data, self.send_to_child_sock)
+						print 'Resent tuple' + str(tuple_id)
+					else:
+						print "Cannot update timestamp. Tuple already deleted!"
 
 class Bolt(object):
 	def __init__(self, task_details):
