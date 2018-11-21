@@ -288,8 +288,8 @@ class Bolt(object):
 		while True:
 			item = self.queue.get()
 			tuple_id, tuple_data = item['tuple_id'], item['tuple']
-			print "item"
-			print tuple_id, tuple_data
+			# print "item"
+			# print tuple_id, tuple_data
 
 			# if bolt function is a filter, returns a boolean for each tuple
 			if self.task_details['function_type'] == 'filter':
@@ -298,9 +298,11 @@ class Bolt(object):
 					if self.task_details['sink']:
 						# if tuple was already written, do not write to file again
 						if tuple_id in self.written_tuples:
-							pass
+							print 'Line already written, ignore'
 						else:
 							self.written_tuples.add(tuple_id)
+							print 'List of tuple_ids already written is'
+							print self.written_tuples
 							self.output_file.write((output.encode('utf-8')))
 							self.output_file.write('\n')
 							print 'send ACK+REMOVE for filtered tuple'
