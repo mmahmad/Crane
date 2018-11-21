@@ -299,6 +299,7 @@ class Bolt(object):
 						# if tuple was already written, do not write to file again
 						if tuple_id in self.written_tuples:
 							print 'Line already written, ignore'
+							self.send_ack(tuple_id, 'REMOVE')
 						else:
 							self.written_tuples.add(tuple_id)
 							print 'List of tuple_ids already written is'
@@ -323,10 +324,12 @@ class Bolt(object):
 					if self.task_details['sink']:
 						# send ACK+REMOVE message to spout
 						if tuple_id in self.written_tuples:
-							print 'send ACK+REMOVE for transformed tuple'
+							print 'Line already written, ignore'
 							self.send_ack(tuple_id, 'REMOVE')
 						else:
-							self.written_tuples.add(tuple_id)						
+							self.written_tuples.add(tuple_id)
+							print 'List of tuple_ids already written is'
+							print self.written_tuples					
 							self.output_file.write((output.encode('utf-8')))
 							self.output_file.write('\n')
 							print 'send ACK+REMOVE for transformed tuple'
