@@ -9,7 +9,8 @@ def main():
 	for line in content[:1000]:
 		if int(line[0]) > 70000:
 			count += 1
-
+			line = str(line[0])+'hello world\n'
+			print line
 	print count
 
 if __name__ == '__main__':
