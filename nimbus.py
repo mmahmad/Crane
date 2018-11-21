@@ -59,7 +59,12 @@ class Nimbus(object):
 				self.assign_jobs()
 			elif data['type'] == 'JOIN_WORKER':
 				self.machine_list.append(addr[0])
-
+			elif data['type'] == 'FAIL':
+				self.reassign_jobs(data['id'])
+	
+	def reassign_jobs(self, failed_node):
+		print failed_node
+		
 	def assign_jobs(self):
 		port = 5000
 		print 'List of alive machine IPs is'
@@ -68,6 +73,7 @@ class Nimbus(object):
 		spout_node = None
 		counter = 0
 		for worker in self.config:
+			self.config[worker]['worker_id'] = worker
 			if self.config[worker]['type'] == 'spout':
 				spout_node = worker
 			self.worker_mapping[self.machine_list[counter]].append(worker)
@@ -115,7 +121,7 @@ class Nimbus(object):
 				try:
 					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-					sock.sendto(json.dumps(self.config[worker]), (machine, SUPERVISOR_LISTEN_PORT))
+					sock.sendto(json.dumps({'type': 'NEW', 'task_details':self.config[worker]}), (machine, SUPERVISOR_LISTEN_PORT))
 				except:
 					print 'Unable to contact worker'
 					return

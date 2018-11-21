@@ -41,6 +41,7 @@ class Supervisor(object):
 		# start the node failure detector component and sdfs
 		failure_detector_node = node.Node()
 		failure_detector_node.start()
+		self.buffer = {}
 
 		# join the fun
 		try:
@@ -61,20 +62,26 @@ class Supervisor(object):
 		sock.bind((MY_HOSTNAME, MY_PORT_LISTEN_FOR_JOB))
 
 		while(1):
-			task_details, addr = sock.recvfrom(1024000)
-			print "received task"
-			task_details = json.loads(task_details)
-
-			if task_details['type'] == 'spout':
-				spout = Spout(task_details)
-				t_id = threading.Thread(target = spout.start)
-				t_id.daemon = True
-				t_id.start()
-			elif task_details['type'] == 'bolt':
-				bolt = Bolt(task_details)
-				t_id = threading.Thread(target = bolt.start)
-				t_id.daemon = True
-				t_id.start()
+			# task_details, addr = sock.recvfrom(1024000)
+			data, addr = sock.recvfrom(1024000)
+			print "received data"
+			data = json.loads(data)
+			
+			if data['type'].upper() == 'NEW':
+				task_details = data['task_details']
+				worker_id = task_details['worker_id']
+				if task_details['type'] == 'spout':
+					spout = Spout(task_details)
+					self.buffer[worker_id] = spout
+					t_id = threading.Thread(target = spout.start)
+					t_id.daemon = True
+					t_id.start()
+				elif task_details['type'] == 'bolt':
+					bolt = Bolt(task_details)
+					self.buffer[worker_id] = bolt
+					t_id = threading.Thread(target = bolt.start)
+					t_id.daemon = True
+					t_id.start()
 
 '''
 Spout is started by a supervisor;
