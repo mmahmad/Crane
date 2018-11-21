@@ -5,6 +5,7 @@ import Queue
 import time
 import pprint
 import random
+import node
 
 def get_process_hostname():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -37,6 +38,10 @@ def forwardTupleToChildren(task_details, forward_tuple, sock):
 			
 class Supervisor(object):
 	def __init__(self):
+		# start the node failure detector component and sdfs
+		failure_detector_node = node.Node()
+		failure_detector_node.start()
+
 		# join the fun
 		try:
 			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -138,7 +143,7 @@ class Spout(object):
 				
 				# forward the tuple to child bolt(s)
 				forwardTupleToChildren(self.task_details, self.buffer[tuple_id], self.send_to_child_sock)
-				time.sleep(0.01)
+				time.sleep(0.1)
 
 				if not start_poll:
 					timeout_thread = threading.Thread(target = self.check_timeouts, args = ())
@@ -301,8 +306,8 @@ class Bolt(object):
 							print 'Line already written, ignore'
 							self.send_ack(tuple_id, 'REMOVE')
 						else:
-							self.written_tuples.add(tuple_id)
-							print 'List of tuple_ids already written is'
+							# self.written_tuples.add(tuple_id)
+							# print 'List of tuple_ids already written is'
 							print self.written_tuples
 							self.output_file.write((output.encode('utf-8')))
 							self.output_file.write('\n')

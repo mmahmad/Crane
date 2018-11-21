@@ -12,6 +12,7 @@ import Queue
 import time
 import pprint
 import collections
+import node
 
 def get_process_hostname():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -35,6 +36,9 @@ class Nimbus(object):
 		self.worker_mapping = collections.defaultdict(list)
 		self.reverse_mapping = {}
 		self.machine_list = []
+
+		failure_detector_node = node.Node()
+		failure_detector_node.start()
 
 	def listen(self):
 		print "Waiting for worker to connect..."

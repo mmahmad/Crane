@@ -37,6 +37,9 @@ FNULL = open(os.devnull, 'w')
 INTRODUCER_IP = "fa18-cs425-g03-01.cs.illinois.edu" # VM1 is the introducer
 INTRODUCER_PORT = 45001
 
+NIMBUS_IP = 'fa18-cs425-g03-01.cs.illinois.edu'
+NIMBUS_PORT = 20000
+
 class Node(object):
 	def __init__(self):
 		self.membership_list = []
@@ -201,6 +204,26 @@ class Node(object):
 					LOGGER.info('threadPingAndWait(): Could not connect to the introducer at %s', str(INTRODUCER_IP))
 					return
 				
+
+				# Do the same thing, but with Nimbus
+				# Connect to nimbus and send the failed node's information to it
+				data = {
+					'type': 'FAIL',
+					'failed_node': id
+				}
+				print "Detected node failure"
+				print data
+
+				try:
+					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+					sock.sendto(json.dumps(data), (NIMBUS_IP, NIMBUS_PORT))
+
+				except socket.error as e:  # If connection to the introducer fails
+					print 'threadPingAndWait(): Could not connect to the nimbus at ' + str(NIMBUS_IP)
+					LOGGER.info('threadPingAndWait(): Could not connect to the nimbus at %s', str(NIMBUS_IP))
+					return
+									
 				# Add the node's id to our own list if it's not already there
 				if id not in self.failed_nodes:
 					self.failed_nodes.append(id)
@@ -628,7 +651,248 @@ class Node(object):
 			self.queue.put(1)
 
 		return
+	
+	def start(self):
+		t1 = threading.Thread(target = self.server, args = ())  
+		t1.daemon = True  
+		t1.start()
+
+		t2 = threading.Thread(target = self.client, args = ())
+		t2.daemon = True 
+		t2.start()
+
+		t3 = threading.Thread(target = self.fileSystemServer, args = ())  
+		t3.daemon = True  
+		t3.start()
+
+		init = True
+		self.command = 'JOIN'
+		self.introduce()
+		# Take input "JOIN/LEAVE/LIST/ID"
+		'''
+		while True:
+			full_command = raw_input('\nEnter command...\n')
+
+			if full_command == '':
+				continue
 				
+			command = full_command.strip().split()
+
+			if command[0].upper() == "JOIN":
+				# Only join if not joined before
+				if init:
+					node.command = 'JOIN'
+					node.introduce()
+
+				init = False
+			elif command[0].upper() == 'LEAVE':
+				node.command = 'LEAVE'
+				time.sleep(3)
+				break
+			elif command[0].upper() == 'LIST':
+				printTable(node.membership_list, ['id'])
+			elif command[0].upper() == 'ID':
+				print node.id
+
+			# GET <dest_file_name> <src_file_name>
+			elif command[0].upper() == 'GET' or command[0].upper() == 'G':
+				if len(command) != 3:
+					print 'Invalid usage - GET needs 2 arguments'
+					continue
+				
+				# contact master and send file
+				master_socket = None
+				master_host = node.master_id[0]
+				master_port = FILE_SYSTEM_RECVPORT
+				try:
+					master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+					master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+					master_socket.connect((master_host, master_port))
+				except socket.error as e: #If connection to remote machine fails
+					print 'Could not connect to ' + str(master_host)
+					return
+
+				try:
+					master_socket.sendall(full_command)
+					start_time = time.time()
+					ret_value = master_socket.recv(1024)
+					
+					if ret_value.strip() == 'ACK':
+						end_time = time.time()
+						print 'File successfully downloaded from SDFS'
+						print 'Time taken to upload file: '
+						print end_time - start_time			
+
+					elif ret_value.strip() == 'No such file exists':
+						print 'File does not exist in SDFS'
+						
+				except socket.error as e:
+					print 'Error during GET'
+
+			# PUT <src_file_name> <dest_file_name>	
+			elif command[0].upper() == 'PUT' or command[0].upper() == 'P':
+				if len(command) != 3:
+					print 'Invalid usage - PUT needs 2 arguments'
+					continue																	
+				
+				# Check if file exists locally
+				if not os.path.isfile('local_files/' + command[1]):
+					print 'Local file does not exist'
+					continue
+
+				# contact master and send file
+				master_socket = None
+				master_host = node.master_id[0]
+				master_port = FILE_SYSTEM_RECVPORT
+				try:
+					master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+					master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+					master_socket.connect((master_host, master_port))
+				except socket.error as e: #If connection to remote machine fails
+					print 'Could not connect to ' + str(master_host)
+					return
+
+				try:
+					master_socket.sendall(full_command)
+					start_time = time.time()
+					ret_value = master_socket.recv(1024)
+
+					if ret_value.strip() == 'ACK':
+						end_time = time.time()
+						print 'File successfully uploaded to SDFS'	
+						print 'Time taken to upload file: '
+						print end_time - start_time												
+				except socket.error as e:
+					print 'Error during PUT'
+
+			# STORE (list of all files at client)
+			elif command[0].upper() == 'STORE' or command[0].upper() == 'S':
+				file_list = os.listdir('sdfs_files')
+				print('Files stored at this node:')
+				print('-------------------------------------------')
+
+				for file in file_list:
+					print file
+
+			# LS <file_name> (list all replicas where this file is stored)
+			elif command[0].upper() == 'LS':
+				
+				if len(command) != 2:
+					print "Invalid usage - LS needs an argument"
+					continue
+
+				# contact master and send file
+				master_socket = None
+				master_host = node.master_id[0]
+				master_port = FILE_SYSTEM_RECVPORT
+				try:
+					master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+					master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+					master_socket.connect((master_host, master_port))
+				except socket.error as e: #If connection to remote machine fails
+					print 'Could not connect to ' + str(master_host)
+					return
+
+				try:
+					master_socket.sendall(full_command)
+					ret_value = json.loads(master_socket.recv(1024))
+																											
+				except socket.error as e:
+					print 'Error during LS'
+
+				if ret_value[0] == 'No such file exists':
+					print 'File you tried to LS does not exist'
+					continue
+
+				print('Replica nodes where {} is stored:'. format(command[1]))
+				print('------------------------------------------------')
+
+				for replica in ret_value:
+					print replica
+
+			# delete <file_name>	
+			elif command[0].upper() == 'DELETE' or command[0].upper() == 'D':
+				if len(command) != 2:
+					print 'Invalid usage - DELETE needs 1 argument'
+					continue
+				
+				# contact master and send file
+				master_socket = None
+				master_host = node.master_id[0]
+				master_port = FILE_SYSTEM_RECVPORT
+				try:
+					master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+					master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+					master_socket.connect((master_host, master_port))
+				except socket.error as e: #If connection to remote machine fails
+					print 'Could not connect to ' + str(master_host)
+					return
+
+				try:
+					master_socket.sendall(full_command)
+					ret_value = master_socket.recv(1024)
+
+					if ret_value.strip() == 'File deleted':
+						print 'File successfully deleted'
+					elif ret_value.strip() == 'File does not exist':
+						print 'Cannot delete file - does not exist'
+
+				except socket.error as e:
+					print 'Error during DELETE command'
+
+			# GV <file_name> <num_version> <local file name> (get last x versions of the file)					
+			elif command[0].upper() == 'GET-VERSIONS' or command[0].upper() == 'GV':
+				if len(command) != 4:
+					print 'Invalid usage - GET-VERSIONS needs 3 arguments'
+					continue
+				
+				# contact master and send file
+				master_socket = None
+				master_host = node.master_id[0]
+				master_port = FILE_SYSTEM_RECVPORT
+				try:
+					master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+					master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+					master_socket.connect((master_host, master_port))
+				except socket.error as e: #If connection to remote machine fails
+					print 'Could not connect to ' + str(master_host)
+					return
+
+				try:
+					master_socket.sendall(full_command)
+					start_time = time.time()
+					ret_value = master_socket.recv(1024)
+				except socket.error as e:
+					print 'Error during GET-VERSIONS'
+					continue
+
+				if ret_value.strip() == 'No such file exists':
+					print 'File does not exist in SDFS'
+				elif ret_value.strip() == 'All versions sent':
+					file_list = os.listdir('local_files')
+					
+					with open('local_files/' + command[3], 'w') as write_file:
+						for file in file_list:
+							if file.startswith(command[1]):
+								write_file.write('----------------------\n')
+		
+								with open('local_files/' + file) as read_file:
+									lines = read_file.read()
+									write_file.write(lines)
+
+								os.remove('local_files/' + file)
+					
+					end_time = time.time()
+					print 'Time taken to download versions: '
+					print end_time - start_time
+					print 'All versions transferred successfully'
+		'''
+		if self.command == 'LEAVE':
+			return
+
+		t1.join()
+		t2.join()
+
 def printTable(myDict, colList=None):
 	""" Pretty print a list of dictionaries (myDict) as a dynamically sized table.
 	If column names (colList) aren't specified, they will show in random order.
@@ -641,248 +905,10 @@ def printTable(myDict, colList=None):
 	myList.insert(1, ['-' * i for i in colSize]) # Seperating line
 	for item in myList: print(formatStr.format(*item))
 
-def main():
-	node = Node()
 
-	t1 = threading.Thread(target = node.server, args = ())  
-	t1.daemon = True  
-	t1.start()
+# def main():
+# 	node = Node()
+# 	node.start()
 
-	t2 = threading.Thread(target = node.client, args = ())
-	t2.daemon = True 
-	t2.start()
-
-	t3 = threading.Thread(target = node.fileSystemServer, args = ())  
-	t3.daemon = True  
-	t3.start()
-
-	init = True
-	node.command = 'JOIN'
-	node.introduce()
-	# Take input "JOIN/LEAVE/LIST/ID"
-	'''
-	while True:
-		full_command = raw_input('\nEnter command...\n')
-
-		if full_command == '':
-			continue
-			
-		command = full_command.strip().split()
-
-		if command[0].upper() == "JOIN":
-			# Only join if not joined before
-			if init:
-				node.command = 'JOIN'
-				node.introduce()
-
-			init = False
-		elif command[0].upper() == 'LEAVE':
-			node.command = 'LEAVE'
-			time.sleep(3)
-			break
-		elif command[0].upper() == 'LIST':
-			printTable(node.membership_list, ['id'])
-		elif command[0].upper() == 'ID':
-			print node.id
-
-		# GET <dest_file_name> <src_file_name>
-		elif command[0].upper() == 'GET' or command[0].upper() == 'G':
-			if len(command) != 3:
-				print 'Invalid usage - GET needs 2 arguments'
-				continue
-			
-			# contact master and send file
-			master_socket = None
-			master_host = node.master_id[0]
-			master_port = FILE_SYSTEM_RECVPORT
-			try:
-				master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-				master_socket.connect((master_host, master_port))
-			except socket.error as e: #If connection to remote machine fails
-				print 'Could not connect to ' + str(master_host)
-				return
-
-			try:
-				master_socket.sendall(full_command)
-				start_time = time.time()
-				ret_value = master_socket.recv(1024)
-				
-				if ret_value.strip() == 'ACK':
-					end_time = time.time()
-					print 'File successfully downloaded from SDFS'
-					print 'Time taken to upload file: '
-					print end_time - start_time			
-
-				elif ret_value.strip() == 'No such file exists':
-					print 'File does not exist in SDFS'
-					
-			except socket.error as e:
-				print 'Error during GET'
-
-		# PUT <src_file_name> <dest_file_name>	
-		elif command[0].upper() == 'PUT' or command[0].upper() == 'P':
-			if len(command) != 3:
-				print 'Invalid usage - PUT needs 2 arguments'
-				continue																	
-			
-			# Check if file exists locally
-			if not os.path.isfile('local_files/' + command[1]):
-				print 'Local file does not exist'
-				continue
-
-			# contact master and send file
-			master_socket = None
-			master_host = node.master_id[0]
-			master_port = FILE_SYSTEM_RECVPORT
-			try:
-				master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-				master_socket.connect((master_host, master_port))
-			except socket.error as e: #If connection to remote machine fails
-				print 'Could not connect to ' + str(master_host)
-				return
-
-			try:
-				master_socket.sendall(full_command)
-				start_time = time.time()
-				ret_value = master_socket.recv(1024)
-
-				if ret_value.strip() == 'ACK':
-					end_time = time.time()
-					print 'File successfully uploaded to SDFS'	
-					print 'Time taken to upload file: '
-					print end_time - start_time												
-			except socket.error as e:
-				print 'Error during PUT'
-
-		# STORE (list of all files at client)
-		elif command[0].upper() == 'STORE' or command[0].upper() == 'S':
-			file_list = os.listdir('sdfs_files')
-			print('Files stored at this node:')
-			print('-------------------------------------------')
-
-			for file in file_list:
-				print file
-
-		# LS <file_name> (list all replicas where this file is stored)
-		elif command[0].upper() == 'LS':
-			
-			if len(command) != 2:
-				print "Invalid usage - LS needs an argument"
-				continue
-
-			# contact master and send file
-			master_socket = None
-			master_host = node.master_id[0]
-			master_port = FILE_SYSTEM_RECVPORT
-			try:
-				master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-				master_socket.connect((master_host, master_port))
-			except socket.error as e: #If connection to remote machine fails
-				print 'Could not connect to ' + str(master_host)
-				return
-
-			try:
-				master_socket.sendall(full_command)
-				ret_value = json.loads(master_socket.recv(1024))
-																										
-			except socket.error as e:
-				print 'Error during LS'
-
-			if ret_value[0] == 'No such file exists':
-				print 'File you tried to LS does not exist'
-				continue
-
-			print('Replica nodes where {} is stored:'. format(command[1]))
-			print('------------------------------------------------')
-
-			for replica in ret_value:
-				print replica
-
-		# delete <file_name>	
-		elif command[0].upper() == 'DELETE' or command[0].upper() == 'D':
-			if len(command) != 2:
-				print 'Invalid usage - DELETE needs 1 argument'
-				continue
-			
-			# contact master and send file
-			master_socket = None
-			master_host = node.master_id[0]
-			master_port = FILE_SYSTEM_RECVPORT
-			try:
-				master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-				master_socket.connect((master_host, master_port))
-			except socket.error as e: #If connection to remote machine fails
-				print 'Could not connect to ' + str(master_host)
-				return
-
-			try:
-				master_socket.sendall(full_command)
-				ret_value = master_socket.recv(1024)
-
-				if ret_value.strip() == 'File deleted':
-					print 'File successfully deleted'
-				elif ret_value.strip() == 'File does not exist':
-					print 'Cannot delete file - does not exist'
-
-			except socket.error as e:
-				print 'Error during DELETE command'
-
-		# GV <file_name> <num_version> <local file name> (get last x versions of the file)					
-		elif command[0].upper() == 'GET-VERSIONS' or command[0].upper() == 'GV':
-			if len(command) != 4:
-				print 'Invalid usage - GET-VERSIONS needs 3 arguments'
-				continue
-			
-			# contact master and send file
-			master_socket = None
-			master_host = node.master_id[0]
-			master_port = FILE_SYSTEM_RECVPORT
-			try:
-				master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-				master_socket.connect((master_host, master_port))
-			except socket.error as e: #If connection to remote machine fails
-				print 'Could not connect to ' + str(master_host)
-				return
-
-			try:
-				master_socket.sendall(full_command)
-				start_time = time.time()
-				ret_value = master_socket.recv(1024)
-			except socket.error as e:
-				print 'Error during GET-VERSIONS'
-				continue
-
-			if ret_value.strip() == 'No such file exists':
-				print 'File does not exist in SDFS'
-			elif ret_value.strip() == 'All versions sent':
-				file_list = os.listdir('local_files')
-				
-				with open('local_files/' + command[3], 'w') as write_file:
-					for file in file_list:
-						if file.startswith(command[1]):
-							write_file.write('----------------------\n')
-	
-							with open('local_files/' + file) as read_file:
-								lines = read_file.read()
-								write_file.write(lines)
-
-							os.remove('local_files/' + file)
-				
-				end_time = time.time()
-				print 'Time taken to download versions: '
-				print end_time - start_time
-				print 'All versions transferred successfully'
-	'''
-	if node.command == 'LEAVE':
-		return
-
-	t1.join()
-	t2.join()
-
-if __name__ == '__main__':
-	main()
+# if __name__ == '__main__':
+# 	main()
