@@ -57,6 +57,7 @@ class Supervisor(object):
 		failure_detector_node.start()
 
 	def listen(self):
+		print "Supervisor.listen() called"
 		# set up socket to listen for incoming jobs
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
