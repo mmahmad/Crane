@@ -64,7 +64,7 @@ class Nimbus(object):
 	
 	def reassign_jobs(self, failed_node):
 		print failed_node
-		
+
 	def assign_jobs(self):
 		port = 5000
 		print 'List of alive machine IPs is'
