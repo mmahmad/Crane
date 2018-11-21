@@ -6,8 +6,8 @@ def main():
 	content = [line.strip().split(',') for line in content]
 	count = 0
 
-	for line in content:
-		if int(line[0]) > 80000:
+	for line in content[:1000]:
+		if int(line[0]) > 70000:
 			count += 1
 
 	print count

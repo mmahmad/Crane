@@ -158,7 +158,6 @@ class Spout(object):
 
 	def listen_for_acks(self):
 		while(1):
-			# time.sleep(0.01)
 			# UDP			
 			data, addr = self.ack_sock.recvfrom(1024000)
 			
@@ -232,6 +231,8 @@ class Bolt(object):
 
 		self.send_ack_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.send_ack_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+		self.written_tuples = set()
 		
 	def send_ack(self, tuple_id, msg_type):
 		# send ACK+REMOVE message to spout
@@ -295,17 +296,20 @@ class Bolt(object):
 				output = self.function(tuple_data)
 				if output: # if true, forward to next bolt
 					if self.task_details['sink']:
-						self.output_file.write((output.encode('utf-8')))
-						self.output_file.write('\n')
-						print 'send ACK+REMOVE for filtered tuple'
-						self.send_ack(tuple_id, 'REMOVE')
+						# if tuple was already written, do not write to file again
+						if tuple_id in self.written_tuples:
+							pass
+						else:
+							self.written_tuples.add(tuple_id)
+							self.output_file.write((output.encode('utf-8')))
+							self.output_file.write('\n')
+							print 'send ACK+REMOVE for filtered tuple'
+							self.send_ack(tuple_id, 'REMOVE')
 					else:
-						prob = random.random()
 						# send ACK+KEEP message to spout
 						print 'send ACK+KEEP for filtered tuple'
 						self.send_ack(tuple_id, 'KEEP')
 
-						#if prob < 0.8:
 						forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
 				else:
 					print 'send ACK+REMOVE for filtered tuple'
@@ -316,10 +320,15 @@ class Bolt(object):
 				if output:
 					if self.task_details['sink']:
 						# send ACK+REMOVE message to spout
-						self.output_file.write((output.encode('utf-8')))
-						self.output_file.write('\n')
-						print 'send ACK+REMOVE for transformed tuple'
-						self.send_ack(tuple_id, 'REMOVE')
+						if tuple_id in self.written_tuples:
+							print 'send ACK+REMOVE for transformed tuple'
+							self.send_ack(tuple_id, 'REMOVE')
+						else:
+							self.written_tuples.add(tuple_id)						
+							self.output_file.write((output.encode('utf-8')))
+							self.output_file.write('\n')
+							print 'send ACK+REMOVE for transformed tuple'
+							self.send_ack(tuple_id, 'REMOVE')
 					else:
 						item['tuple'] = output
 						# send ACK+KEEP message to spout
