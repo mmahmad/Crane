@@ -138,7 +138,7 @@ class Spout(object):
 				
 				# forward the tuple to child bolt(s)
 				forwardTupleToChildren(self.task_details, self.buffer[tuple_id], self.send_to_child_sock)
-				time.sleep(0.005)
+				time.sleep(0.01)
 
 				if not start_poll:
 					timeout_thread = threading.Thread(target = self.check_timeouts, args = ())
