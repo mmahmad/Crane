@@ -13,6 +13,7 @@ import time
 import pprint
 import collections
 import node
+import random
 
 def get_process_hostname():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -60,10 +61,19 @@ class Nimbus(object):
 			elif data['type'] == 'JOIN_WORKER':
 				self.machine_list.append(addr[0])
 			elif data['type'] == 'FAIL':
-				self.reassign_jobs(data['id'])
+				self.reassign_jobs(data['failed_node'])
 	
 	def reassign_jobs(self, failed_node):
-		print failed_node
+		failed_node_ip = failed_node[0]
+		jobs_to_reassign = self.worker_mapping[failed_node_ip]
+		
+		#Remove IP from list of alive machines
+		self.machine_list.remove(failed_node_ip)
+		#Remove IP from IP->job mapping
+		del self.worker_mapping[failed_node_ip]
+
+		for job in jobs_to_reassign:
+			new_node = random.choice(self.machine_list)
 
 	def assign_jobs(self):
 		port = 5000
