@@ -41,6 +41,10 @@ class Nimbus(object):
 		failure_detector_node = node.Node()
 		failure_detector_node.start()
 
+		t1 = threading.Thread(target = self.listen, args = ())
+		t1.daemon = True
+		t1.start()
+
 	def listen(self):
 		print "Waiting for worker to connect..."
 
@@ -118,7 +122,7 @@ class Nimbus(object):
 			
 def main():
 	nimbus = Nimbus()
-	nimbus.listen()
+	# nimbus.listen()
 	
 if __name__ == '__main__':
 	main()
