@@ -106,7 +106,7 @@ class Spout(object):
 	def __init__(self, task_details):
 		self.task_details = task_details
 		self.buffer = dict()
-		self.MAX_ACK_TIMEOUT = 1 # 1 second timeout		
+		self.MAX_ACK_TIMEOUT = 5 # 1 second timeout		
 		# UDP
 		#---------
 		self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
