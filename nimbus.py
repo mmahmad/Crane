@@ -37,8 +37,8 @@ class Nimbus(object):
 		self.reverse_mapping = {}
 		self.machine_list = []
 
-		failure_detector_node = node.Node()
-		failure_detector_node.start()
+		# failure_detector_node = node.Node()
+		# failure_detector_node.start()
 
 	def listen(self):
 		print "Waiting for worker to connect..."
