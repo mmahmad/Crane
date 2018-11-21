@@ -34,8 +34,7 @@ class Nimbus(object):
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self.sock.bind((self.host, self.port))
-		self.worker_mapping = collections.defaultdict(list)
-		self.reverse_mapping = {}
+		
 		self.machine_list = []
 
 		t1 = threading.Thread(target = self.listen, args = ())
@@ -57,6 +56,8 @@ class Nimbus(object):
 
 			if data['type'] == 'START_JOB':
 				self.config = data['config']
+				self.worker_mapping = collections.defaultdict(list)
+				self.reverse_mapping = {}
 				self.assign_jobs()
 			elif data['type'] == 'JOIN_WORKER':
 				self.machine_list.append(addr[0])
@@ -132,6 +133,7 @@ class Nimbus(object):
 					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 					sock.sendto(json.dumps({'type': 'NEW', 'task_details':self.config[worker]}), (machine, SUPERVISOR_LISTEN_PORT))
+					print 'Sent details to ' + str(machine)
 				except:
 					print 'Unable to contact worker'
 					return
