@@ -38,9 +38,6 @@ def forwardTupleToChildren(task_details, forward_tuple, sock):
 			
 class Supervisor(object):
 	def __init__(self):
-		# start the node failure detector component and sdfs
-		failure_detector_node = node.Node()
-		failure_detector_node.start()
 		self.buffer = {}
 
 		# join the fun
@@ -54,6 +51,10 @@ class Supervisor(object):
 		except:
 			print 'Unable to contact nimbus'
 			return
+
+		# start the node failure detector component and sdfs
+		failure_detector_node = node.Node()
+		failure_detector_node.start()
 
 	def listen(self):
 		# set up socket to listen for incoming jobs
