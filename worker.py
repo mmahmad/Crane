@@ -52,6 +52,10 @@ class Supervisor(object):
 			print 'Unable to contact nimbus'
 			return
 
+		t1 = threading.Thread(target = self.listen, args = ())
+		t1.daemon = True
+		t1.start()
+
 		# start the node failure detector component and sdfs
 		failure_detector_node = node.Node()
 		failure_detector_node.start()
@@ -362,7 +366,7 @@ class Bolt(object):
 def main():
 	# supervisor connects to nimbus to let it know that it is available
 	supervisor = Supervisor()
-	supervisor.listen()
+	# supervisor.listen()
 
 if __name__ == '__main__':
 	main()
