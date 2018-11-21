@@ -71,6 +71,7 @@ class Supervisor(object):
 			if data['type'].upper() == 'NEW':
 				task_details = data['task_details']
 				worker_id = task_details['worker_id']
+				
 				if task_details['type'] == 'spout':
 					spout = Spout(task_details)
 					self.buffer[worker_id] = spout
