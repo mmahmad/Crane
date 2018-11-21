@@ -12,12 +12,12 @@ import os
 import Queue
 import time
 
-# logging.basicConfig(
-# 	level = logging.DEBUG,
-# 	format='%(asctime)s %(levelname)s %(message)s',
-# 	filename='mp2.log',
-# 	filemode='w+',
-# )
+	# logging.basicConfig(
+	# 	level = logging.DEBUG,
+	# 	format='%(asctime)s %(levelname)s %(message)s',
+	# 	filename='mp2.log',
+	# 	filemode='w+',
+	# )
 
 LOGGER = logging.getLogger('MP2')
 

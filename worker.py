@@ -39,8 +39,8 @@ def forwardTupleToChildren(task_details, forward_tuple, sock):
 class Supervisor(object):
 	def __init__(self):
 		# start the node failure detector component and sdfs
-		# failure_detector_node = node.Node()
-		# failure_detector_node.start()
+		failure_detector_node = node.Node()
+		failure_detector_node.start()
 
 		# join the fun
 		try:
