@@ -124,9 +124,22 @@ class Nimbus(object):
 					sock1.sendto('123', (parent_ip, SUPERVISOR_LISTEN_PORT))
 					print 'Sent updated child details to ' + str(self.reverse_mapping[parent[0]])
 				except Exception as e:
+					print '1'
 					print e
 					print 'Unable to contact parent'
 					return
+				
+				try:
+					sock1.sendto('123', (parent_ip, SUPERVISOR_LISTEN_PORT))
+				except Exception as e:
+					print '2'
+					print e
+
+				try:
+					sock1.sendto('123', (parent_ip, SUPERVISOR_LISTEN_PORT))
+				except Exception as e:
+					print '3'
+					print e
 			
 			#Tell all its children to update their parent IP Details
 			for child in self.config[job]['children']:
