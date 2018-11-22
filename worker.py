@@ -235,26 +235,30 @@ class Spout(object):
 		# 				# print "Cannot update timestamp. Tuple already deleted!"
 
 		while True:
-			print'---------------------------------------------'
+			# print'---------------------------------------------'
 			buffer_copy = self.buffer.copy()
-			print 'buffer_copy'
-			pprint.pprint(buffer_copy)
-			print 'buffer'
-			pprint.pprint(self.buffer)
+			# print 'buffer_copy'
+			# pprint.pprint(buffer_copy)
+			# print 'buffer'
+			# pprint.pprint(self.buffer)
 
 			for tuple_id, tuple_data in buffer_copy.items():
-				pprint.pprint(tuple_id)
-				pprint.pprint(tuple_data)
+				# pprint.pprint(tuple_id)
+				# pprint.pprint(tuple_data)
 				if time.time() - tuple_data['timestamp'] > self.MAX_ACK_TIMEOUT:
-					print time.time()
+					# print time.time()
 					# check if tuple is still there in self.buffer (possible that it was removed by now due to listen_for_ack thread's action)
 					if tuple_id in self.buffer:
 					# re-send tuple
 						self.buffer[tuple_id]['timestamp'] = time.time()
 						forwardTupleToChildren(self.task_details, tuple_data, self.send_to_child_sock)
 						print 'Resent tuple' + str(tuple_id)
+						# pprint.pprint(tuple_id)
+						# pprint.pprint(tuple_data)
 					else:
 						print "Cannot update timestamp. Tuple already deleted!"
+
+			time.sleep(5)
 
 class Bolt(object):
 	def __init__(self, task_details):
