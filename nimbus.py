@@ -105,11 +105,16 @@ class Nimbus(object):
 
 				print 'Parent Ip:'
 				print self.reverse_mapping[parent][0]		
+				parent_ip = self.reverse_mapping[parent][0]
 
 				try:
 					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-					sock.sendto(json.dumps({'type': 'UPDATE', 'task_details':self.config[parent]}), (self.reverse_mapping[parent][0], SUPERVISOR_LISTEN_PORT))
+					data = {
+						'type': 'UPDATE',
+						'task_details': self.config[parent]
+					}
+					sock.sendto(json.dumps(data), (parent_ip, SUPERVISOR_LISTEN_PORT))
 					print 'Sent updated child details to ' + str(self.reverse_mapping[parent[0]])
 				except Exception as e:
 					print e
@@ -121,10 +126,16 @@ class Nimbus(object):
 				self.config[parent]['parent_ip_port'].remove(original_details)
 				self.config[parent]['parent_ip_port'].append(self.reverse_mapping[job])
 
+				parent_ip = self.reverse_mapping[parent][0]
+				
 				try:
 					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-					sock.sendto(json.dumps({'type': 'UPDATE', 'task_details':self.config[child]}), (self.reverse_mapping[child][0], SUPERVISOR_LISTEN_PORT))
+					data = {
+						'type': 'UPDATE',
+						'task_details': self.config[parent]
+					}
+					sock.sendto(json.dumps(data), (child_ip, SUPERVISOR_LISTEN_PORT))
 					print 'Sent updated parent details to ' + str(self.reverse_mapping[child][0])
 				except Exception as e:
 					print e
