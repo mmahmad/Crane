@@ -150,7 +150,7 @@ class Nimbus(object):
 				self.port += 1
 			else:
 				self.reverse_mapping[worker] = (self.machine_list[counter], None)
-				
+
 			counter = (counter + 1) % (len(self.machine_list))
 		
 		print 'Job assignment:'
@@ -162,7 +162,7 @@ class Nimbus(object):
 		spout_ip = self.reverse_mapping[spout_node]
 
 		for worker in self.config:
-			self.config[worker]['spout_ip_port'] = (spout_ip, SPOUT_LISTEN_PORT)
+			self.config[worker]['spout_ip_port'] = (spout_ip[0], SPOUT_LISTEN_PORT)
 			if self.config[worker]['type'] == 'bolt':
 				self.config[worker]['listen_port'] = self.reverse_mapping[worker][1]
 			try:
