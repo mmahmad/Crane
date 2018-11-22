@@ -93,6 +93,7 @@ class Supervisor(object):
 				pprint.pprint(data['task_details'])
 				task_details = data['task_details']
 				worker_id = task_details['worker_id']
+
 				self.buffer[worker_id].task_details = task_details
 			elif data['type'].upper() == 'SPOUT_UPDATE':
 				task_details = data['task_details']
@@ -279,7 +280,7 @@ class Bolt(object):
 		self.queue = Queue.Queue()
 		self.function = eval(self.task_details['function'])
 		self.output_file = None # initialized in start()
-
+		self.spout_ip, self.spout_port = self.task_details['spout_ip_port']
 		self.send_to_child_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.send_to_child_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
