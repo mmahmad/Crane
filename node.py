@@ -191,8 +191,6 @@ class Node(object):
 					'type': 'FAIL',
 					'failed_node': id
 				}
-				print "Detected node failure"
-				print data
 
 				try:
 					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -267,8 +265,8 @@ class Node(object):
 					sock.sendto(json.dumps({'type': 'FILE_LIST', 'file_list': self.file_list}), (INTRODUCER_IP, INTRODUCER_PORT))
 					
 					end_time = time.time()
-					print 'Time to replicate file:'
-					print end_time - start_time
+					# print 'Time to replicate file:'
+					# print end_time - start_time
 
 				self.lock.release()
 				return

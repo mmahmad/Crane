@@ -73,7 +73,7 @@ class Supervisor(object):
 			t = threading.Thread(target = self.process_supervisor_message, args = (data, ))
 			t.daemon = True
 			t.start()
-			
+
 	def process_supervisor_message(self, data):
 		print "received data"
 		data = json.loads(data)

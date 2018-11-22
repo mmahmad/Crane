@@ -111,7 +111,8 @@ class Nimbus(object):
 					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 					sock.sendto(json.dumps({'type': 'UPDATE', 'task_details':self.config[parent]}), (self.reverse_mapping[parent][0], SUPERVISOR_LISTEN_PORT))
 					print 'Sent updated child details to ' + str(self.reverse_mapping[parent[0]])
-				except:
+				except Exception as e:
+					print e
 					print 'Unable to contact parent'
 					return
 			
@@ -125,7 +126,8 @@ class Nimbus(object):
 					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 					sock.sendto(json.dumps({'type': 'UPDATE', 'task_details':self.config[child]}), (self.reverse_mapping[child][0], SUPERVISOR_LISTEN_PORT))
 					print 'Sent updated parent details to ' + str(self.reverse_mapping[child][0])
-				except:
+				except Exception as e:
+					print e
 					print 'Unable to contact child'
 					return
 		
