@@ -27,6 +27,10 @@ def forwardTupleToChildren(task_details, forward_tuple, sock):
 	# TODO: If current worker is spout and it has multiple children, duplicate tuples should have separate unique tuple_id
 	children = task_details['children_ip_port'] # list
 	for child_ip, child_port in children:
+		print "forward tuple to child at IP: "
+		print child_ip
+		print "at port"
+		print child_port
 		# forward
 		try:
 			sock.sendto(json.dumps(forward_tuple), (child_ip, child_port))
