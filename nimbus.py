@@ -34,7 +34,7 @@ class Nimbus(object):
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self.sock.bind((self.host, self.port))
-		
+		self.port = 5000
 		self.machine_list = []
 
 		t1 = threading.Thread(target = self.listen, args = ())
@@ -73,8 +73,55 @@ class Nimbus(object):
 		#Remove IP from IP->job mapping
 		del self.worker_mapping[failed_node_ip]
 
+		original_details = None
+
 		for job in jobs_to_reassign:
 			new_node = random.choice(self.machine_list)
+			original_details = self.reverse_mapping[job]
+			self.reverse_mapping[job] = (new_node, self.port + 1)
+			self.port += 1
+
+			print 'Assigned job' + str(job) + 'to machine' + str(new_node)
+
+			try:
+				sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+				sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+				sock.sendto(json.dumps({'type': 'NEW', 'task_details':self.config[job]}), (new_node, SUPERVISOR_LISTEN_PORT))
+				print 'Sent details to ' + str(new_node)
+			except:
+				print 'Unable to contact worker'
+				return
+
+			#Tell all its parents to update their children IP details
+			for parent in self.config[job]['parents']:
+				self.config[parent]['children_ip_port'].remove(original_details)
+				self.config[parent]['children_ip_port'].append(self.reverse_mapping[job])
+
+				try:
+					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+					sock.sendto(json.dumps({'type': 'UPDATE', 'task_details':self.config[parent]}), (self.reverse_mapping[parent][1], SUPERVISOR_LISTEN_PORT))
+					print 'Sent updated child details to ' + str(self.reverse_mapping[parent][1])
+				except:
+					print 'Unable to contact worker'
+					return
+			
+			#Tell all its children to update their parent IP Details
+			for child in self.config[job]['children']:
+				self.config[parent]['parent_ip_port'].remove(original_details)
+				self.config[parent]['parent_ip_port'].append(self.reverse_mapping[job])
+
+				try:
+					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+					sock.sendto(json.dumps({'type': 'UPDATE', 'task_details':self.config[child]}), (self.reverse_mapping[child][1], SUPERVISOR_LISTEN_PORT))
+					print 'Sent updated parent details to ' + str(self.reverse_mapping[parent][1])
+				except:
+					print 'Unable to contact worker'
+					return
+		
+		print 'Updated config with reassigned and children IPs'
+		pprint.pprint(self.config)
 
 	def assign_jobs(self):
 		port = 5000
@@ -90,8 +137,8 @@ class Nimbus(object):
 			self.worker_mapping[self.machine_list[counter]].append(worker)
 
 			if self.config[worker]['type'] == 'bolt':
-				self.reverse_mapping[worker] = (self.machine_list[counter], port)
-				port += 1
+				self.reverse_mapping[worker] = (self.machine_list[counter], self.port)
+				self.port += 1
 			else:
 				self.reverse_mapping[worker] = self.machine_list[counter]
 			counter = (counter + 1) % (len(self.machine_list))
