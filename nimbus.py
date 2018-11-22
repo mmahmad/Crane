@@ -84,7 +84,7 @@ class Nimbus(object):
 			self.reverse_mapping[job] = (new_node, self.port + 1)
 			self.port += 1
 
-			print 'Assigned job ' + str(job) + ' to machine' + str(new_node)
+			print 'Assigned job ' + str(job) + ' to machine ' + str(new_node)
 
 			try:
 				sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -101,7 +101,7 @@ class Nimbus(object):
 				self.config[parent]['children_ip_port'].append(self.reverse_mapping[job])
 
 				print 'Updated child details in parent'
-				print self.config[parent]
+				pprint.pprint(self.config[parent])
 
 				print 'Parent Ip:'
 				print self.reverse_mapping[parent][0]		

@@ -70,36 +70,41 @@ class Supervisor(object):
 		while(1):
 			# task_details, addr = sock.recvfrom(1024000)
 			data, addr = sock.recvfrom(1024000)
-			print "received data"
-			data = json.loads(data)
+			t = threading.Thread(target = self.process_supervisor_message, args = (data, ))
+			t.daemon = True
+			t.start()
 			
-			if data['type'].upper() == 'NEW':
-				task_details = data['task_details']
-				worker_id = task_details['worker_id']
-				
-				if task_details['type'] == 'spout':
-					spout = Spout(task_details)
-					self.buffer[worker_id] = spout
-					t_id = threading.Thread(target = spout.start)
-					t_id.daemon = True
-					t_id.start()
-				elif task_details['type'] == 'bolt':
-					bolt = Bolt(task_details)
-					self.buffer[worker_id] = bolt
-					t_id = threading.Thread(target = bolt.start)
-					t_id.daemon = True
-					t_id.start()
-			elif data['type'].upper() == 'UPDATE':
-				pprint.pprint(data['task_details'])
-				task_details = data['task_details']
-				worker_id = task_details['worker_id']
+	def process_supervisor_message(self, data):
+		print "received data"
+		data = json.loads(data)
+			
+		if data['type'].upper() == 'NEW':
+			task_details = data['task_details']
+			worker_id = task_details['worker_id']
+			
+			if task_details['type'] == 'spout':
+				spout = Spout(task_details)
+				self.buffer[worker_id] = spout
+				t_id = threading.Thread(target = spout.start)
+				t_id.daemon = True
+				t_id.start()
+			elif task_details['type'] == 'bolt':
+				bolt = Bolt(task_details)
+				self.buffer[worker_id] = bolt
+				t_id = threading.Thread(target = bolt.start)
+				t_id.daemon = True
+				t_id.start()
+		elif data['type'].upper() == 'UPDATE':
+			pprint.pprint(data['task_details'])
+			task_details = data['task_details']
+			worker_id = task_details['worker_id']
+			self.buffer[worker_id].task_details = task_details
+		elif data['type'].upper() == 'SPOUT_UPDATE':
+			task_details = data['task_details']
+			worker_id = task_details['worker_id']
+			self.buffer[worker_id].spout_ip = task_details['spout_ip_port'][0]
+			self.buffer[worker_id].spout_port = task_details['spout_ip_port'][1]
 
-				self.buffer[worker_id].task_details = task_details
-			elif data['type'].upper() == 'SPOUT_UPDATE':
-				task_details = data['task_details']
-				worker_id = task_details['worker_id']
-				self.buffer[worker_id].spout_ip = task_details['spout_ip_port'][0]
-				self.buffer[worker_id].spout_port = task_details['spout_ip_port'][1]
 '''
 Spout is started by a supervisor;
 It reads a given source (file/db/etc) line-by-line, generates a unique msgId for each line and appends the msgId to it;
