@@ -106,22 +106,17 @@ class Nimbus(object):
 				print 'Parent Ip:'
 				print self.reverse_mapping[parent][0]		
 				parent_ip = self.reverse_mapping[parent][0]
+				data = {
+					'type': 'UPDATE',
+					'task_details': self.config[parent]
+				}
 
 				try:
 					sock1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 					sock1.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-					data = {
-						'type': 'UPDATE',
-						'task_details': self.config[parent]
-					}
 					print data, parent_ip, SUPERVISOR_LISTEN_PORT
 
-					try:
-						data = json.dumps(data)
-					except Exception as e:
-						print e
-
-					sock1.sendto('123', (parent_ip, SUPERVISOR_LISTEN_PORT))
+					sock1.sendto(json.dumps(data), (parent_ip, SUPERVISOR_LISTEN_PORT))
 					print 'Sent updated child details to ' + str(self.reverse_mapping[parent[0]])
 				except Exception as e:
 					print '1'
@@ -130,16 +125,16 @@ class Nimbus(object):
 					return
 				
 				try:
-					sock1.sendto('123', (parent_ip, SUPERVISOR_LISTEN_PORT))
+					sock1.sendto(json.dumps(data), (parent_ip, SUPERVISOR_LISTEN_PORT))
 				except Exception as e:
 					print '2'
 					print e
 
-				try:
-					sock1.sendto('123', (parent_ip, SUPERVISOR_LISTEN_PORT))
-				except Exception as e:
-					print '3'
-					print e
+				# try:
+				# 	sock1.sendto('123', (parent_ip, SUPERVISOR_LISTEN_PORT))
+				# except Exception as e:
+				# 	print '3'
+				# 	print e
 			
 			#Tell all its children to update their parent IP Details
 			for child in self.config[job]['children']:
