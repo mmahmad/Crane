@@ -102,7 +102,11 @@ class Supervisor(object):
 			pprint.pprint(data['task_details'])
 			task_details = data['task_details']
 			worker_id = task_details['worker_id']
+			print "self.buffer[worker_id].task_details before:"
+			print self.buffer[worker_id].task_details																						
 			self.buffer[worker_id].task_details = task_details
+			print "self.buffer[worker_id].task_details after:"
+			print self.buffer[worker_id].task_details
 		elif data['type'].upper() == 'SPOUT_UPDATE':
 			task_details = data['task_details']
 			worker_id = task_details['worker_id']
@@ -362,7 +366,7 @@ class Bolt(object):
 					if self.task_details['sink']:
 						# if tuple was already written, do not write to file again
 						if tuple_id in self.written_tuples:
-							print 'Line already written, ignore'
+							# print 'Line already written, ignore'
 							self.send_ack(tuple_id, 'REMOVE')
 						else:
 							# self.written_tuples.add(tuple_id)
@@ -370,7 +374,7 @@ class Bolt(object):
 							print self.written_tuples
 							self.output_file.write((output.encode('utf-8')))
 							self.output_file.write('\n')
-							print 'send ACK+REMOVE for filtered tuple'
+							# print 'send ACK+REMOVE for filtered tuple'
 							self.send_ack(tuple_id, 'REMOVE')
 					else:
 						# send ACK+KEEP message to spout
@@ -379,7 +383,7 @@ class Bolt(object):
 
 						forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
 				else:
-					print 'send ACK+REMOVE for filtered tuple'
+					# print 'send ACK+REMOVE for filtered tuple'
 					self.send_ack(tuple_id, 'REMOVE') # in case tuple has been filtered out, spout no longer needs to keep track of this tuple
 
 			elif self.task_details['function_type'] == 'transform':
@@ -392,17 +396,17 @@ class Bolt(object):
 							self.send_ack(tuple_id, 'REMOVE')
 						else:
 							self.written_tuples.add(tuple_id)
-							print 'List of tuple_ids already written is'
-							print self.written_tuples					
+							# print 'List of tuple_ids already written is'
+							# print self.written_tuples					
 							self.output_file.write((output.encode('utf-8')))
 							self.output_file.write('\n')
-							print 'send ACK+REMOVE for transformed tuple'
+							# print 'send ACK+REMOVE for transformed tuple'
 							self.send_ack(tuple_id, 'REMOVE')
 					else:
 						item['tuple'] = output
 						# send ACK+KEEP message to spout
 						forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
-						print 'send ACK+KEEP for transformed tuple'
+						# print 'send ACK+KEEP for transformed tuple'
 						self.send_ack(tuple_id, 'KEEP')						
 			elif self.task_details['function_type'] == 'join':
 				#TODO: join()  
