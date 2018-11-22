@@ -69,6 +69,9 @@ class Nimbus(object):
 		jobs_to_reassign = self.worker_mapping[failed_node_ip]
 		
 		#Remove IP from list of alive machines
+		if failed_node_ip not in self.machine_list:
+			return
+
 		self.machine_list.remove(failed_node_ip)
 		#Remove IP from IP->job mapping
 		del self.worker_mapping[failed_node_ip]
@@ -81,7 +84,7 @@ class Nimbus(object):
 			self.reverse_mapping[job] = (new_node, self.port + 1)
 			self.port += 1
 
-			print 'Assigned job' + str(job) + 'to machine' + str(new_node)
+			print 'Assigned job ' + str(job) + ' to machine' + str(new_node)
 
 			try:
 				sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -100,10 +103,10 @@ class Nimbus(object):
 				try:
 					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-					sock.sendto(json.dumps({'type': 'UPDATE', 'task_details':self.config[parent]}), (self.reverse_mapping[parent][1], SUPERVISOR_LISTEN_PORT))
-					print 'Sent updated child details to ' + str(self.reverse_mapping[parent][1])
+					sock.sendto(json.dumps({'type': 'UPDATE', 'task_details':self.config[parent]}), (self.reverse_mapping[parent][0], SUPERVISOR_LISTEN_PORT))
+					print 'Sent updated child details to ' + str(self.reverse_mapping[parent[0]])
 				except:
-					print 'Unable to contact worker'
+					print 'Unable to contact parent'
 					return
 			
 			#Tell all its children to update their parent IP Details
@@ -114,10 +117,10 @@ class Nimbus(object):
 				try:
 					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-					sock.sendto(json.dumps({'type': 'UPDATE', 'task_details':self.config[child]}), (self.reverse_mapping[child][1], SUPERVISOR_LISTEN_PORT))
-					print 'Sent updated parent details to ' + str(self.reverse_mapping[parent][1])
+					sock.sendto(json.dumps({'type': 'UPDATE', 'task_details':self.config[child]}), (self.reverse_mapping[child][0], SUPERVISOR_LISTEN_PORT))
+					print 'Sent updated parent details to ' + str(self.reverse_mapping[child][0])
 				except:
-					print 'Unable to contact worker'
+					print 'Unable to contact child'
 					return
 		
 		print 'Updated config with reassigned and children IPs'
