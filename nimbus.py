@@ -115,7 +115,13 @@ class Nimbus(object):
 						'task_details': self.config[parent]
 					}
 					print data, parent_ip, SUPERVISOR_LISTEN_PORT
-					sock1.sendto(json.dumps(data), (parent_ip, SUPERVISOR_LISTEN_PORT))
+
+					try:
+						data = json.dumps(data)
+					except Exception as e:
+						print e
+
+					sock1.sendto('123', (parent_ip, SUPERVISOR_LISTEN_PORT))
 					print 'Sent updated child details to ' + str(self.reverse_mapping[parent[0]])
 				except Exception as e:
 					print e
