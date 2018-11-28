@@ -62,11 +62,14 @@ class Nimbus(object):
 			elif data['type'] == 'JOIN_WORKER':
 				self.machine_list.append(addr[0])
 			elif data['type'] == 'FAIL':
+				# self.reassign_jobs(data['failed_node'])
+				self.reverse_mapping = {}
+				self.worker_mapping = collections.defaultdict(list)
 				self.reassign_jobs(data['failed_node'])
-	
+
 	def reassign_jobs(self, failed_node):
 		failed_node_ip = failed_node[0]
-		jobs_to_reassign = self.worker_mapping[failed_node_ip]
+		# jobs_to_reassign = self.worker_mapping[failed_node_ip]
 		
 		#Remove IP from list of alive machines
 		if failed_node_ip not in self.machine_list:
@@ -74,6 +77,7 @@ class Nimbus(object):
 
 		self.machine_list.remove(failed_node_ip)
 		#Remove IP from IP->job mapping
+		'''
 		del self.worker_mapping[failed_node_ip]
 
 		original_details = None
@@ -159,9 +163,10 @@ class Nimbus(object):
 		
 		print 'Updated config with reassigned and children IPs'
 		pprint.pprint(self.config)
+		'''
+		self.assign_jobs()
 
 	def assign_jobs(self):
-		port = 5000
 		print 'List of alive machine IPs is'
 		print self.machine_list
 

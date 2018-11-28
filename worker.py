@@ -155,9 +155,9 @@ class Spout(object):
 		t1.daemon = True
 		t1.start()
 
-		t2 = threading.Thread(target = self.listen_for_acks)
-		t2.daemon = True
-		t2.start()
+		# t2 = threading.Thread(target = self.listen_for_acks)
+		# t2.daemon = True
+		# t2.start()
 
 	def send_data(self):
 		start_poll = False													
@@ -182,21 +182,21 @@ class Spout(object):
 				forwardTupleToChildren(self.task_details, self.buffer[tuple_id], self.send_to_child_sock)
 				time.sleep(0.01)
 
-				if not start_poll:
-					timeout_thread = threading.Thread(target = self.check_timeouts, args = ())
-					timeout_thread.daemon = True
-					timeout_thread.start()
-					start_poll = True
+				# if not start_poll:
+				# 	timeout_thread = threading.Thread(target = self.check_timeouts, args = ())
+				# 	timeout_thread.daemon = True
+				# 	timeout_thread.start()
+				# 	start_poll = True
 
 				tuple_id += 1
 		
-		while True:
-			print 'length of buffer'
-			print len(self.buffer)
-			time.sleep(3)
-			if len(self.buffer) == 0:
-				print 'Job completed'
-				return
+		# while True:
+		# 	print 'length of buffer'
+		# 	print len(self.buffer)
+		# 	time.sleep(3)
+		# 	if len(self.buffer) == 0:
+		# 		print 'Job completed'
+		# 		return
 
 	def listen_for_acks(self):
 		while(1):
@@ -367,7 +367,8 @@ class Bolt(object):
 						# if tuple was already written, do not write to file again
 						if tuple_id in self.written_tuples:
 							# print 'Line already written, ignore'
-							self.send_ack(tuple_id, 'REMOVE')
+							# self.send_ack(tuple_id, 'REMOVE')
+							pass
 						else:
 							# self.written_tuples.add(tuple_id)
 							# print 'List of tuple_ids already written is'
@@ -375,17 +376,17 @@ class Bolt(object):
 							self.output_file.write((output.encode('utf-8')))
 							self.output_file.write('\n')
 							# print 'send ACK+REMOVE for filtered tuple'
-							self.send_ack(tuple_id, 'REMOVE')
+							# self.send_ack(tuple_id, 'REMOVE')
 					else:
 						# send ACK+KEEP message to spout
-						print 'send ACK+KEEP for filtered tuple'
-						self.send_ack(tuple_id, 'KEEP')
+						# print 'send ACK+KEEP for filtered tuple'
+						# self.send_ack(tuple_id, 'KEEP')
 
 						forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
 				else:
 					# print 'send ACK+REMOVE for filtered tuple'
-					self.send_ack(tuple_id, 'REMOVE') # in case tuple has been filtered out, spout no longer needs to keep track of this tuple
-
+					# self.send_ack(tuple_id, 'REMOVE') # in case tuple has been filtered out, spout no longer needs to keep track of this tuple
+					pass
 			elif self.task_details['function_type'] == 'transform':
 				output = self.function(tuple_data)
 				if output:
@@ -393,7 +394,7 @@ class Bolt(object):
 						# send ACK+REMOVE message to spout
 						if tuple_id in self.written_tuples:
 							print 'Line already written, ignore'
-							self.send_ack(tuple_id, 'REMOVE')
+							# self.send_ack(tuple_id, 'REMOVE')
 						else:
 							self.written_tuples.add(tuple_id)
 							# print 'List of tuple_ids already written is'
@@ -401,13 +402,13 @@ class Bolt(object):
 							self.output_file.write((output.encode('utf-8')))
 							self.output_file.write('\n')
 							# print 'send ACK+REMOVE for transformed tuple'
-							self.send_ack(tuple_id, 'REMOVE')
+							# self.send_ack(tuple_id, 'REMOVE')
 					else:
 						item['tuple'] = output
 						# send ACK+KEEP message to spout
 						forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
 						# print 'send ACK+KEEP for transformed tuple'
-						self.send_ack(tuple_id, 'KEEP')						
+						# self.send_ack(tuple_id, 'KEEP')						
 			elif self.task_details['function_type'] == 'join':
 				#TODO: join()  
 				pass
