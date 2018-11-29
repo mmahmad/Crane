@@ -7,8 +7,9 @@ def main():
 	count = 0
 
 	for line in content:
-		print line[14]
-		
+		if int(line[14]) > 0 and line[16] == 'LAX':
+			count += 1
+
 	print count
 
 if __name__ == '__main__':

@@ -1,0 +1,29 @@
+W1:
+  type: spout
+  sink: False
+  input: airline-5k.csv
+  children: [W2]
+
+W2:
+  type: bolt
+  sink: False
+  function_type: filter
+  function: "lambda row: row[16] == 'LAX' and int(row[14]) > 0"
+  parents: [W1]
+  children: [W3]
+
+W3:
+  type: bolt
+  sink: False
+  function_type: transform
+  function: "lambda row: 1"
+  parents: [W2]
+  children: [W4]
+
+W4:
+  type: bolt
+  sink: True
+  function_type: aggregate
+  function: "operator.add"
+  parents: [W3]
+  output: airline-5k-output.txt
