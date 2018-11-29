@@ -453,7 +453,7 @@ class Bolt(object):
 					self.state = tuple_data
 				else:
 					self.state = functools.reduce(self.function, [self.state, tuple_data])
-			
+					print self.state
 			elif self.task_details['function_type'] == 'join':
 				#TODO: join()  
 				pass
