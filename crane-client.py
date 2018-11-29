@@ -83,7 +83,7 @@ def getResultFile(sdfs_master_ip, sdfs_master_port, sdfs_file_name):
 		if ret_value.strip() == 'ACK':
 			end_time = time.time()
 			print 'Output successfully downloaded from SDFS'
-			print 'Time taken to upload file: '
+			print 'Time taken to download file: '
 			print end_time - start_time			
 
 		elif ret_value.strip() == 'No such file exists':

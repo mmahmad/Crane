@@ -6,6 +6,8 @@ import time
 import pprint
 import random
 import node
+import functools
+import operator
 
 def get_process_hostname():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -316,6 +318,8 @@ class Bolt(object):
 		self.written_tuples = set()
 		self.client_ip_port = self.task_details['client_ip_port']
 
+		self.state = None
+
 	def send_ack(self, tuple_id, msg_type):
 		# send ACK+REMOVE message to spout
 		ack_message = {
@@ -376,6 +380,10 @@ class Bolt(object):
 			if tuple_id == 'EXIT':
 				if self.task_details['sink']:
 					# TODO: PUT file (Use MP3)
+					if self.task_details['function_type'] == 'aggregate':
+						self.output_file.write((self.state.encode('utf-8')))
+						self.output_file.write('\n')
+					
 					self.saveResults()
 
 					data = {
@@ -440,6 +448,12 @@ class Bolt(object):
 						forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
 						# print 'send ACK+KEEP for transformed tuple'
 						# self.send_ack(tuple_id, 'KEEP')						
+			elif self.task_details['function_type'] == 'aggregate':
+				if self.state is None:
+					self.state = tuple_data
+				else:
+					self.state = functools.reduce(self.function, [self.state, tuple_data])
+			
 			elif self.task_details['function_type'] == 'join':
 				#TODO: join()  
 				pass

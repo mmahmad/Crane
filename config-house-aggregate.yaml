@@ -1,0 +1,29 @@
+W1:
+  type: spout
+  sink: False
+  input: modified_house_data.csv
+  children: [W2]
+
+W2:
+  type: bolt
+  sink: False
+  function_type: filter
+  function: "lambda house: int(house[0]) > 80000"
+  parents: [W1]
+  children: [W3]
+
+W3:
+  type: bolt
+  sink: False
+  function_type: transform
+  function: "lambda house: 1'"
+  parents: [W2]
+  children: [W4]
+
+W4:
+  type: bolt
+  sink: True
+  function_type: aggregate
+  function: "operator.add"
+  parents: [W3]
+  output: config_house_aggregate_output.txt
