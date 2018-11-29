@@ -8,7 +8,7 @@ W2:
   type: bolt
   sink: False
   function_type: filter
-  function: "lambda tweet: tweet[2].startswith('Mon')"
+  function: "lambda tweet: 'Mon' in tweet[2]"
   parents: [W1]
   children: [W4]
 
