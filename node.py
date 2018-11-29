@@ -475,7 +475,7 @@ class Node(object):
 
 				# execute SCP
 				try:
-					retData = subprocess.check_call(scp_command, stdout = FNULL, shell=True)
+					retData = subprocess.check_call(scp_command, shell=True)
 				except Exception as e:
 					print e
 					print 'unable to GET file'
