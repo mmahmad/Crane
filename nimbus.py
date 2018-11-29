@@ -167,9 +167,9 @@ class Nimbus(object):
 		print 'Updated config with reassigned and children IPs'
 		pprint.pprint(self.config)
 		'''
-		self.assign_jobs(addr)
+		self.assign_jobs(addr, reassign=True)
 
-	def assign_jobs(self, addr):
+	def assign_jobs(self, addr, reassign = False):
 		print 'List of alive machine IPs is'
 		print self.machine_list
 
@@ -200,7 +200,10 @@ class Nimbus(object):
 
 		for worker in self.config:
 			self.config[worker]['spout_ip_port'] = (spout_ip[0], SPOUT_LISTEN_PORT)
-			self.config[worker]['client_ip_port'] = (addr[0], CLIENT_LISTEN_PORT)
+
+			if not reassign:
+				self.config[worker]['client_ip_port'] = (addr[0], CLIENT_LISTEN_PORT)
+				
 			self.config[worker]['file_system_master'] = self.failure_detector_node.master_id[0]
 		
 			if self.config[worker]['type'] == 'bolt':
