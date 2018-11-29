@@ -189,7 +189,16 @@ class Spout(object):
 				# 	start_poll = True
 
 				tuple_id += 1
-		
+
+		time.sleep(2)
+		# after all tuples sent, send 'EXIT' to all children
+		EXIT_TUPLE = {
+					'tuple_id': 'EXIT',
+					'tuple': None,
+					'timestamp': None
+				}
+		forwardTupleToChildren(self.task_details, EXIT_TUPLE, self.send_to_child_sock)
+
 		# while True:
 		# 	print 'length of buffer'
 		# 	print len(self.buffer)
@@ -301,7 +310,8 @@ class Bolt(object):
 		self.send_ack_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 		self.written_tuples = set()
-		
+		self.client_ip_port = self.task_details['client_ip_port']
+
 	def send_ack(self, tuple_id, msg_type):
 		# send ACK+REMOVE message to spout
 		ack_message = {
@@ -359,6 +369,12 @@ class Bolt(object):
 			# print "item"
 			print tuple_id, tuple_data
 
+			if tuple_id == 'EXIT':
+				if self.task_details['sink']:
+					# TODO: PUT file (Use MP3)
+					self.send_to_child_sock.sendto('JOB_COMPLETED', (self.client_ip_port[0], self.client_ip_port[1])
+				else:	
+					forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)											
 			# if bolt function is a filter, returns a boolean for each tuple
 			if self.task_details['function_type'] == 'filter':
 				output = self.function(tuple_data)

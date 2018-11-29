@@ -25,6 +25,7 @@ NIMBUS_LISTEN_PORT = 20000
 NIMBUS_IP = get_process_hostname()
 SUPERVISOR_LISTEN_PORT = 6000
 SPOUT_LISTEN_PORT = 4999
+CLIENT_LISTEN_PORT = 6789
 
 class Nimbus(object):
 	def __init__(self):
@@ -58,16 +59,16 @@ class Nimbus(object):
 				self.config = data['config']
 				self.worker_mapping = collections.defaultdict(list)
 				self.reverse_mapping = {}
-				self.assign_jobs()
+				self.assign_jobs(addr)
 			elif data['type'] == 'JOIN_WORKER':
 				self.machine_list.append(addr[0])
 			elif data['type'] == 'FAIL':
 				# self.reassign_jobs(data['failed_node'])
 				self.reverse_mapping = {}
 				self.worker_mapping = collections.defaultdict(list)
-				self.reassign_jobs(data['failed_node'])
+				self.reassign_jobs(data['failed_node'], addr)
 
-	def reassign_jobs(self, failed_node):
+	def reassign_jobs(self, failed_node, addr):
 		failed_node_ip = failed_node[0]
 		# jobs_to_reassign = self.worker_mapping[failed_node_ip]
 		
@@ -164,9 +165,9 @@ class Nimbus(object):
 		print 'Updated config with reassigned and children IPs'
 		pprint.pprint(self.config)
 		'''
-		self.assign_jobs()
+		self.assign_jobs(addr)
 
-	def assign_jobs(self):
+	def assign_jobs(self, addr):
 		print 'List of alive machine IPs is'
 		print self.machine_list
 
@@ -196,6 +197,8 @@ class Nimbus(object):
 
 		for worker in self.config:
 			self.config[worker]['spout_ip_port'] = (spout_ip[0], SPOUT_LISTEN_PORT)
+			self.config[worker]['client_ip_port'] = (addr[0], CLIENT_LISTEN_PORT)
+
 			if self.config[worker]['type'] == 'bolt':
 				self.config[worker]['listen_port'] = self.reverse_mapping[worker][1]
 			try:
