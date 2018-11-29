@@ -694,7 +694,7 @@ class Node(object):
 
 			# GET <dest_file_name> <src_file_name>
 			elif command[0].upper() == 'GET' or command[0].upper() == 'G':
-				 	
+
 
 			# PUT <src_file_name> <dest_file_name>	
 			elif command[0].upper() == 'PUT' or command[0].upper() == 'P':

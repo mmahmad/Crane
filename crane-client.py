@@ -89,6 +89,6 @@ def getResultFile(sdfs_master_ip, sdfs_master_port, sdfs_file_name):
 			
 	except socket.error as e:
 		print 'Error during GET'
-		
+
 if __name__ == '__main__':
     main()
