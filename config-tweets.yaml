@@ -1,14 +1,14 @@
 W1:
   type: spout
   sink: False
-  input: tweets.csv
+  input: tweets-5k.csv
   children: [W2, W3]
 
 W2:
   type: bolt
   sink: False
   function_type: filter
-  function: "lambda tweet: tweet[4].startswith('a')"
+  function: "lambda tweet: tweet[2].startswith('Mon')"
   parents: [W1]
   children: [W4]
 
@@ -16,14 +16,22 @@ W3:
   type: bolt
   sink: False
   function_type: filter
-  function: "lambda tweet: len(tweet[5]) > 50"
+  function: "lambda tweet: '@mileycyrus' in tweet[5]"
   parents: [W1]
   children: [W4]
 
 W4:
   type: bolt
-  sink: True
+  sink: False
   function_type: transform
-  function: "lambda tweet: tweet[4] + ' ' + tweet[5] + ' ' + str(len(tweet[5]))"
+  function: "lambda tweet: 1"
   parents: [W2, W3]
-  output: output-tweets.txt
+  children: [W5]
+
+W5:
+  type: bolt
+  sink: True
+  function_type: aggregate
+  function: "operator.add"
+  parents: [W4]
+  output: tweets-5k-output.txt
