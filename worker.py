@@ -457,7 +457,7 @@ class Bolt(object):
 			print 'Could not connect to ' + str(master_host)
 			return
 
-		full_command = 'PUT ' + self.task_details[output_file] + ' ' + self.task_details[output_file]
+		full_command = 'PUT ' + self.task_details['output'] + ' ' + self.task_details['output']
 
 		try:
 			master_socket.sendall(full_command)
