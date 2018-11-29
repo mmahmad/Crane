@@ -43,11 +43,11 @@ class Nimbus(object):
 		t1.start()
 
 		# start node failure detection component
-		failure_detector_node = node.Node()
-		failure_detector_node.start()
-		self.file_system_master = failure_detector_node.master_id
-		print self.file_system_master
-		
+		self.failure_detector_node = node.Node()
+		self.failure_detector_node.start()
+		# self.file_system_master = failure_detector_node.master_id
+		# print self.file_system_master
+
 	def listen(self):
 		print "Waiting for worker to connect..."
 
@@ -196,12 +196,13 @@ class Nimbus(object):
 
 		#Find spout IP to send to everybody so they can send ACKs to spout
 		spout_ip = self.reverse_mapping[spout_node]
-
+		print self.failure_detector_node.master_id
+		
 		for worker in self.config:
 			self.config[worker]['spout_ip_port'] = (spout_ip[0], SPOUT_LISTEN_PORT)
 			self.config[worker]['client_ip_port'] = (addr[0], CLIENT_LISTEN_PORT)
-			self.config[worker]['file_system_master'] = self.file_system_master
-
+			self.config[worker]['file_system_master'] = self.failure_detector_node.master_id
+		
 			if self.config[worker]['type'] == 'bolt':
 				self.config[worker]['listen_port'] = self.reverse_mapping[worker][1]
 			try:
