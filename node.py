@@ -472,7 +472,7 @@ class Node(object):
 
 				
 				# create SCP command (scp <source> <dest>)
-				scp_command = 'scp mmahmad3@{replica_source}:~/cs425mp3/sdfs_files/{file_name_on_replica} mmahmad3@{requester}:~/cs425mp3/local_files/{new_file_name}'.format(replica_source=replica['id'][0], file_name_on_replica=sdfs_file_name, requester=host, new_file_name=local_file_name)
+				scp_command = 'scp mmahmad3@{replica_source}:~/cs425mp4/sdfs_files/{file_name_on_replica} mmahmad3@{requester}:~/cs425mp4/local_files/{new_file_name}'.format(replica_source=replica['id'][0], file_name_on_replica=sdfs_file_name, requester=host, new_file_name=local_file_name)
 
 				# execute SCP
 				try:
@@ -544,7 +544,7 @@ class Node(object):
 					# thread_list.append(t_id)
 					# t_id.daemon = True
 					# t_id.start()
-					scp_command = 'scp mmahmad3@{source}:~/cs425mp3/local_files/{source_file_name} mmahmad3@{replica_node}:~/cs425mp3/sdfs_files/{sdfs_file_name}'.format(source = host, source_file_name = local_file_name, replica_node = replica['id'][0], sdfs_file_name = sdfs_file_name)
+					scp_command = 'scp mmahmad3@{source}:~/cs425mp4/local_files/{source_file_name} mmahmad3@{replica_node}:~/cs425mp4/sdfs_files/{sdfs_file_name}'.format(source = host, source_file_name = local_file_name, replica_node = replica['id'][0], sdfs_file_name = sdfs_file_name)
 
 					try:
 						retData = subprocess.check_call(scp_command, shell=True, stdout = FNULL, stderr = FNULL)
