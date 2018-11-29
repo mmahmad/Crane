@@ -198,7 +198,9 @@ class Spout(object):
 					'timestamp': None
 				}
 		forwardTupleToChildren(self.task_details, EXIT_TUPLE, self.send_to_child_sock)
-
+		print 'Spout shutting down...'
+		return
+									
 		# while True:
 		# 	print 'length of buffer'
 		# 	print len(self.buffer)
@@ -372,9 +374,13 @@ class Bolt(object):
 			if tuple_id == 'EXIT':
 				if self.task_details['sink']:
 					# TODO: PUT file (Use MP3)
-					self.send_to_child_sock.sendto('JOB_COMPLETED', (self.client_ip_port[0], self.client_ip_port[1])
+					self.send_to_child_sock.sendto('JOB_COMPLETED', (self.client_ip_port[0], self.client_ip_port[1]))
+					return
 				else:	
-					forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)											
+					forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
+					print "EXIT received. Bolt shutting down..."
+					return
+
 			# if bolt function is a filter, returns a boolean for each tuple
 			if self.task_details['function_type'] == 'filter':
 				output = self.function(tuple_data)
