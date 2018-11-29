@@ -337,7 +337,7 @@ class Bolt(object):
 		if self.task_details['sink']:
 			# get file name
 			output_filename = self.task_details['output']
-			self.output_file = open(output_filename, 'w', 0) # 0 to write to file immediately
+			self.output_file = open("local_files/" + output_filename, 'w', 0) # 0 to write to file immediately
 
 							
 		#Create outgoing TCP connection to send ACKs
