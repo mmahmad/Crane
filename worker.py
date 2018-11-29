@@ -381,7 +381,7 @@ class Bolt(object):
 					data = {
 						'type': 'JOB_COMPLETED',
 						'master_ip': self.task_details['file_system_master'],
-						'output_file': self.task_details['output']
+						'output_file' : self.task_details['output']
 					}
 					self.send_to_child_sock.sendto(json.dumps(data), (self.client_ip_port[0], self.client_ip_port[1]))
 					return
@@ -469,8 +469,8 @@ class Bolt(object):
 				print 'Output successfully uploaded to SDFS'	
 				print 'Time taken to upload file: '
 				print end_time - start_time												
-			except socket.error as e:
-				print 'Error during PUT'
+		except socket.error as e:
+			print 'Error during PUT'
 		
 def main():
 	# supervisor connects to nimbus to let it know that it is available
