@@ -381,7 +381,7 @@ class Bolt(object):
 					data = {
 						'type': 'JOB_COMPLETED',
 						'master_ip': self.task_details['file_system_master'],
-						'output_file:' self.task_details['output']
+						'output_file': self.task_details['output']
 					}
 					self.send_to_child_sock.sendto(json.dumps(data), (self.client_ip_port[0], self.client_ip_port[1]))
 					return
