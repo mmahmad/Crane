@@ -659,9 +659,9 @@ class Node(object):
 		t2.daemon = True 
 		t2.start()
 
-		# t3 = threading.Thread(target = self.fileSystemServer, args = ())  
-		# t3.daemon = True  
-		# t3.start()
+		t3 = threading.Thread(target = self.fileSystemServer, args = ())  
+		t3.daemon = True  
+		t3.start()
 
 		init = True
 		self.command = 'JOIN'
