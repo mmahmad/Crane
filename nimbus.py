@@ -46,7 +46,8 @@ class Nimbus(object):
 		failure_detector_node = node.Node()
 		failure_detector_node.start()
 		self.file_system_master = failure_detector_node.master_id
-
+		print self.file_system_master
+		
 	def listen(self):
 		print "Waiting for worker to connect..."
 
