@@ -16,7 +16,7 @@ W3:
   type: bolt
   sink: False
   function_type: transform
-  function: "lambda house: 1'"
+  function: "lambda house: 1"
   parents: [W2]
   children: [W4]
 
