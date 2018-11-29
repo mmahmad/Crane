@@ -381,7 +381,7 @@ class Bolt(object):
 				if self.task_details['sink']:
 					# TODO: PUT file (Use MP3)
 					if self.task_details['function_type'] == 'aggregate':
-						self.output_file.write((self.state.encode('utf-8')))
+						self.output_file.write(self.state)
 						self.output_file.write('\n')
 					
 					self.saveResults()
