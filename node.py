@@ -694,38 +694,7 @@ class Node(object):
 
 			# GET <dest_file_name> <src_file_name>
 			elif command[0].upper() == 'GET' or command[0].upper() == 'G':
-				if len(command) != 3:
-					print 'Invalid usage - GET needs 2 arguments'
-					continue
-				
-				# contact master and send file
-				master_socket = None
-				master_host = node.master_id[0]
-				master_port = FILE_SYSTEM_RECVPORT
-				try:
-					master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-					master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-					master_socket.connect((master_host, master_port))
-				except socket.error as e: #If connection to remote machine fails
-					print 'Could not connect to ' + str(master_host)
-					return
-
-				try:
-					master_socket.sendall(full_command)
-					start_time = time.time()
-					ret_value = master_socket.recv(1024)
-					
-					if ret_value.strip() == 'ACK':
-						end_time = time.time()
-						print 'File successfully downloaded from SDFS'
-						print 'Time taken to upload file: '
-						print end_time - start_time			
-
-					elif ret_value.strip() == 'No such file exists':
-						print 'File does not exist in SDFS'
-						
-				except socket.error as e:
-					print 'Error during GET'
+				 	
 
 			# PUT <src_file_name> <dest_file_name>	
 			elif command[0].upper() == 'PUT' or command[0].upper() == 'P':

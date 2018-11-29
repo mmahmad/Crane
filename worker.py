@@ -20,6 +20,8 @@ MY_HOSTNAME = get_process_hostname()
 MY_PORT_LISTEN_FOR_JOB = 6000
 MY_PORT_LISTEN_FOR_ACKS = 4999
 
+FILE_SYSTEM_RECVPORT = 10000
+
 '''
 Forward tuple to children
 '''
@@ -374,7 +376,14 @@ class Bolt(object):
 			if tuple_id == 'EXIT':
 				if self.task_details['sink']:
 					# TODO: PUT file (Use MP3)
-					self.send_to_child_sock.sendto('JOB_COMPLETED', (self.client_ip_port[0], self.client_ip_port[1]))
+					self.saveResults()
+
+					data = {
+						'type': 'JOB_COMPLETED',
+						'master_ip': self.task_details['file_system_master'],
+						'output_file:' self.task_details['output']
+					}
+					self.send_to_child_sock.sendto(json.dumps(data), (self.client_ip_port[0], self.client_ip_port[1]))
 					return
 				else:	
 					forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
@@ -434,6 +443,34 @@ class Bolt(object):
 			elif self.task_details['function_type'] == 'join':
 				#TODO: join()  
 				pass
+
+	def saveResults(self):
+		master_socket = None
+		master_host = self.task_details['file_system_master']
+		master_port = FILE_SYSTEM_RECVPORT
+			
+		try:
+			master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+			master_socket.connect((master_host, master_port))
+		except socket.error as e: #If connection to remote machine fails
+			print 'Could not connect to ' + str(master_host)
+			return
+
+		full_command = 'PUT ' + self.task_details[output_file] + ' ' + self.task_details[output_file]
+
+		try:
+			master_socket.sendall(full_command)
+			start_time = time.time()
+			ret_value = master_socket.recv(1024)
+
+			if ret_value.strip() == 'ACK':
+				end_time = time.time()
+				print 'Output successfully uploaded to SDFS'	
+				print 'Time taken to upload file: '
+				print end_time - start_time												
+			except socket.error as e:
+				print 'Error during PUT'
 		
 def main():
 	# supervisor connects to nimbus to let it know that it is available

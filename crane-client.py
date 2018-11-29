@@ -6,6 +6,7 @@ NIMBUS_PORT = 20000
 NIMBUS_HOST = 'fa18-cs425-g03-01.cs.illinois.edu'
 
 LISTEN_PORT = 6789 # gets message when job completes
+FILE_SYSTEM_RECVPORT = 10000
 
 def get_process_hostname():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -44,10 +45,50 @@ def listenForResult():
 
 	while True:
 		data, addr = sock.recvfrom(1024)
-		if data.upper() == 'JOB_COMPLETED':
+		data = json.loads(data)
+		if data['type'].upper() == 'JOB_COMPLETED':
 			print 'Job Completed. Collecting results...'
-			# TODO: Get result file
+
+			sdfs_master_ip = data['master_ip']
+			sdfs_master_port = FILE_SYSTEM_RECVPORT
+			sdfs_file_name = data['output_file']
+
+			# Get result file
+			getResultFile(sdfs_master_ip, sdfs_master_port, sdfs_file_name)
 			return
 
+def getResultFile(sdfs_master_ip, sdfs_master_port, sdfs_file_name):
+	# contact master and send file
+	master_socket = None
+	master_host = sdfs_master_ip
+	master_port = sdfs_master_port
+	
+	try:
+		master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		master_socket.connect((master_host, master_port))
+	except socket.error as e: #If connection to remote machine fails
+		print 'Could not connect to ' + str(master_host)
+		return
+
+	full_command = 'GET ' + sdfs_file_name + ' ' + sdfs_file_name
+
+	try:
+		master_socket.sendall(full_command)
+		start_time = time.time()
+		ret_value = master_socket.recv(1024)
+		
+		if ret_value.strip() == 'ACK':
+			end_time = time.time()
+			print 'Output successfully downloaded from SDFS'
+			print 'Time taken to upload file: '
+			print end_time - start_time			
+
+		elif ret_value.strip() == 'No such file exists':
+			print 'File does not exist in SDFS'
+			
+	except socket.error as e:
+		print 'Error during GET'
+		
 if __name__ == '__main__':
     main()
