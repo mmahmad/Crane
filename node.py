@@ -10,7 +10,6 @@ import sys
 import subprocess
 import os
 import Queue
-import time
 
 	# logging.basicConfig(
 	# 	level = logging.DEBUG,
@@ -477,7 +476,8 @@ class Node(object):
 				# execute SCP
 				try:
 					retData = subprocess.check_call(scp_command, stdout = FNULL, shell=True)
-				except:
+				except Exception as e:
+					print e
 					print 'unable to GET file'
 					conn.close()
 					return
@@ -548,9 +548,9 @@ class Node(object):
 
 					try:
 						retData = subprocess.check_call(scp_command, shell=True, stdout = FNULL, stderr = FNULL)
-					except:
+					except Exception as e:
 						self.queue.put(1)
-				
+						print e
 				
 				# for t in thread_list:
 				# 	t.join()
