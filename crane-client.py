@@ -72,6 +72,7 @@ def getResultFile(sdfs_master_ip, sdfs_master_port, sdfs_file_name):
 		return
 
 	full_command = 'GET ' + sdfs_file_name + ' ' + sdfs_file_name
+	print full_command
 
 	try:
 		master_socket.sendall(full_command)

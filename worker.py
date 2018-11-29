@@ -458,7 +458,8 @@ class Bolt(object):
 			return
 
 		full_command = 'PUT ' + self.task_details['output'] + ' ' + self.task_details['output']
-
+		print full_command
+		
 		try:
 			master_socket.sendall(full_command)
 			start_time = time.time()
