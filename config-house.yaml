@@ -4,7 +4,7 @@ W1:
   input: modified_house_data.csv
   children: [W2]
 
-W2:
+W2: 
   type: bolt
   sink: False
   function_type: filter
