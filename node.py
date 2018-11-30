@@ -411,6 +411,10 @@ class Node(object):
 				
 				# replicate previous master's files (should also update the entry)
 				files_to_replicate = []
+
+				if self.file_list is None:
+					return
+					
 				for file_name in self.file_list:
 					if {'id': previous_master} in self.file_list[file_name][0]:
 						self.file_list[file_name][0].remove({'id':previous_master})
