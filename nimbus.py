@@ -38,6 +38,9 @@ class Nimbus(object):
 		self.port = 5000
 		self.machine_list = []
 
+		if get_process_hostname() == '172.22.158.8':
+			self.is_active_nimbus = True
+
 		t1 = threading.Thread(target = self.listen, args = ())
 		t1.daemon = True
 		t1.start()
@@ -61,7 +64,10 @@ class Nimbus(object):
 				self.config = data['config']
 				self.worker_mapping = collections.defaultdict(list)
 				self.reverse_mapping = {}
-				self.assign_jobs(addr)
+
+				if self.is_active_nimbus:
+					self.assign_jobs(addr)
+					
 			elif data['type'] == 'JOIN_WORKER':
 				self.machine_list.append(addr[0])
 			elif data['type'] == 'FAIL':
@@ -70,7 +76,13 @@ class Nimbus(object):
 				self.worker_mapping = collections.defaultdict(list)
 				self.reassign_jobs(data['failed_node'], addr)
 
+				if data['failed_node'][0] == '172.22.158.8':
+					self.is_active_nimbus = True
+
 	def reassign_jobs(self, failed_node, addr):
+		if not self.is_active_nimbus:
+			return
+
 		failed_node_ip = failed_node[0]
 		# jobs_to_reassign = self.worker_mapping[failed_node_ip]
 		

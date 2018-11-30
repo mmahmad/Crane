@@ -37,6 +37,7 @@ INTRODUCER_IP = "fa18-cs425-g03-01.cs.illinois.edu" # VM1 is the introducer
 INTRODUCER_PORT = 45001
 
 NIMBUS_IP = 'fa18-cs425-g03-01.cs.illinois.edu'
+NIMBUS_IP_2 = 'fa18-cs425-g03-01.cs.illinois.edu'
 NIMBUS_PORT = 20000
 
 class Node(object):
@@ -202,7 +203,7 @@ class Node(object):
 					return
 				
 
-				# Do the same thing, but with Nimbus
+				# Do the same thing, but with Nimbus 1 and 2
 				# Connect to nimbus and send the failed node's information to it
 				data = {
 					'type': 'FAIL',
@@ -215,6 +216,7 @@ class Node(object):
 					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 					sock.sendto(json.dumps(data), (NIMBUS_IP, NIMBUS_PORT))
+					sock.sendto(json.dumps(data), (NIMBUS_IP_2, NIMBUS_PORT))
 
 				except socket.error as e:  # If connection to the introducer fails
 					print 'threadPingAndWait(): Could not connect to the nimbus at ' + str(NIMBUS_IP)

@@ -5,6 +5,7 @@ import time
 
 NIMBUS_PORT = 20000
 NIMBUS_HOST = 'fa18-cs425-g03-01.cs.illinois.edu'
+NIMBUS_HOST_2 = 'fa18-cs425-g03-02.cs.illinois.edu'
 
 LISTEN_PORT = 6789 # gets message when job completes
 FILE_SYSTEM_RECVPORT = 10000
@@ -31,8 +32,18 @@ def main():
 
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		data = {"type": "START_JOB", "config": config}
-		sock.sendto(json.dumps(data), (NIMBUS_HOST, NIMBUS_PORT))   
+		sock.settimeout(1)
+
+		try:
+			data = {"type": "START_JOB", "config": config}
+			sock.sendto(json.dumps(data), (NIMBUS_HOST, NIMBUS_PORT))   
+		except socket.timeout as e:
+			try:
+				data = {"type": "START_JOB", "config": config}
+				sock.sendto(json.dumps(data), (NIMBUS_HOST, NIMBUS_PORT))
+			except socket.timeout as e:
+				print 'Cannot start job, connection error'
+				return
 
 	if cmd.strip().split(' ')[0] == 'leave':
 		return

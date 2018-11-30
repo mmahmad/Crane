@@ -16,6 +16,7 @@ def get_process_hostname():
 	s.close()
 
 NIMBUS_HOSTNAME = 'fa18-cs425-g03-01.cs.illinois.edu'
+NIMBUS_HOSTNAME_2 = 'fa18-cs425-g03-02.cs.illinois.edu'
 NIMBUS_PORT = 20000
 
 MY_HOSTNAME = get_process_hostname()
@@ -48,17 +49,46 @@ class Supervisor(object):
 	def __init__(self):
 		self.buffer = {}
 
+		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		sock.settimeout(1)
 		# join the fun
-		try:
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		try:	
 			data = {"type": "JOIN_WORKER"}
 			sock.sendto(json.dumps(data), (NIMBUS_HOSTNAME, NIMBUS_PORT))
 			print "MY_IP:"
 			print MY_HOSTNAME
-		except:
-			print 'Unable to contact nimbus'
+		except socket.timeout as e:
+			print 'Unable to contact nimbus 1'
 			return
+
+			try:
+				data = {"type": "JOIN_WORKER"}
+				sock.sendto(json.dumps(data), (NIMBUS_HOSTNAME, NIMBUS_PORT))
+				print "MY_IP:"
+				print MY_HOSTNAME
+			except socket.timeout as e:
+				print 'Unable to contact nimbus 1'
+				return
+		
+				#If nimbus 1 has failed, try to contact nimbus 2
+				try:	
+					data = {"type": "JOIN_WORKER"}
+					sock.sendto(json.dumps(data), (NIMBUS_HOSTNAME_2, NIMBUS_PORT))
+					print "MY_IP:"
+					print MY_HOSTNAME
+				except socket.timeout as e:
+					print 'Unable to contact nimbus 2'
+					return
+
+					try:
+						data = {"type": "JOIN_WORKER"}
+						sock.sendto(json.dumps(data), (NIMBUS_HOSTNAME_2, NIMBUS_PORT))
+						print "MY_IP:"
+						print MY_HOSTNAME
+					except socket.timeout as e:
+						print 'Unable to contact nimbus 2'
+						return
 
 		t1 = threading.Thread(target = self.listen, args = ())
 		t1.daemon = True
@@ -375,7 +405,9 @@ class Bolt(object):
 			item = self.queue.get()
 			tuple_id, tuple_data = item['tuple_id'], item['tuple']
 			# print "item"
-			print tuple_id, tuple_data
+
+			if not self.task_details['sink']:
+				print tuple_id, tuple_data
 
 			if tuple_id == 'EXIT':
 				if self.task_details['sink']:
@@ -411,7 +443,7 @@ class Bolt(object):
 						else:
 							# self.written_tuples.add(tuple_id)
 							# print 'List of tuple_ids already written is'
-							print self.written_tuples
+							print output
 							self.output_file.write((output.encode('utf-8')))
 							self.output_file.write('\n')
 							# print 'send ACK+REMOVE for filtered tuple'
@@ -437,7 +469,8 @@ class Bolt(object):
 						else:
 							self.written_tuples.add(tuple_id)
 							# print 'List of tuple_ids already written is'
-							# print self.written_tuples					
+							# print self.written_tuples
+							print output					
 							self.output_file.write((output.encode('utf-8')))
 							self.output_file.write('\n')
 							# print 'send ACK+REMOVE for transformed tuple'
