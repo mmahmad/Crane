@@ -15,11 +15,11 @@ spark = SparkSession \
 # df = spark.read.option("header", "false").csv("/home/mmahmad3/cs425mp4/input/tweets-5k-with-header.csv")
 df = spark.read.csv("/home/mmahmad3/cs425mp4/input/tweets-5k-with-header.csv")
 df.cache()
+df.show()
 # milCyDf = df.loc[df['username'] == '@mileycyrus']
 
-newDf = df.filter(df['username'] == '2Hood4Hollywood').show()
-newDf.show()
-# df.show()
+# newDf = df.filter(df['username'] == '2Hood4Hollywood').show()
+# newDf.show()
 
 
 # numAs = logData.filter(logData.value.contains('@mileycyrus')).count()

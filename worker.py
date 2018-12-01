@@ -486,7 +486,7 @@ class Bolt(object):
 					self.state = tuple_data
 				else:
 					self.state = functools.reduce(self.function, [self.state, tuple_data])
-					print 'Intermediate output at sink' + str(self.state)
+					print 'Intermediate output at sink: ' + str(self.state)
 			elif self.task_details['function_type'] == 'join':
 				#TODO: join()  
 				pass
