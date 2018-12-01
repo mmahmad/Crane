@@ -13,7 +13,7 @@ spark = SparkSession \
 # logData = spark.read.text('/home/mmahmad3/cs425mp4/input/tweets-5k.csv').cache()
 
 # df = spark.read.option("header", "false").csv("/home/mmahmad3/cs425mp4/input/tweets-5k-with-header.csv")
-df = spark.read.csv("/home/mmahmad3/cs425mp4/input/airline-5k-with-headers.csv")
+df = spark.read.csv("/home/mmahmad3/cs425mp4/input/airline-5k-with-header.csv")
 df.cache()
 # df.show()
 # milCyDf = df.loc[df['username'] == '@mileycyrus']
