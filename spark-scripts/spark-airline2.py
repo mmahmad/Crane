@@ -6,7 +6,7 @@ from pyspark.sql import SQLContext
 
 spark = SparkSession \
     .builder \
-    .appName("spark_airlines") \
+    .appName("spark_airline2") \
     .master("spark://172.22.158.8:7077") \
     .getOrCreate()
 
@@ -21,7 +21,7 @@ df.cache()
 # newDf = df.filter(df['_c4'] == '2Hood4Hollywood').show()
 
 df.createOrReplaceTempView("airlines")
-sqlDF = spark.sql("SELECT count(*) FROM airlines WHERE _c16='LAX' and _c17='LAS'")
+sqlDF = spark.sql("SELECT _c8, _c9 FROM airlines WHERE _c16='LAX' and _c17='LAS'")
 sqlDF.show()
 
 
