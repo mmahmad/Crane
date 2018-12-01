@@ -10,8 +10,6 @@ spark = SparkSession \
     .master("spark://172.22.156.10:7077") \
     .getOrCreate()
 
-spark.setLogLevel("WARN")
-
 df = spark.read.csv("/home/mmahmad3/cs425mp4/input/airline-5k-with-header.csv")
 df.cache()
 
