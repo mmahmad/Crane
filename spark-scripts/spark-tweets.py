@@ -6,7 +6,7 @@ from pyspark.sql import SQLContext
 
 spark = SparkSession \
     .builder \
-    .appName("batch_tweets") \
+    .appName("spark_tweets") \
     .master("spark://172.22.158.8:7077") \
     .getOrCreate()
 
