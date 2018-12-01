@@ -37,7 +37,7 @@ INTRODUCER_IP = "fa18-cs425-g03-01.cs.illinois.edu" # VM1 is the introducer
 INTRODUCER_PORT = 45001
 
 NIMBUS_IP = 'fa18-cs425-g03-01.cs.illinois.edu'
-NIMBUS_IP_2 = 'fa18-cs425-g03-01.cs.illinois.edu'
+NIMBUS_IP_2 = 'fa18-cs425-g03-02.cs.illinois.edu'
 NIMBUS_PORT = 20000
 
 class Node(object):
@@ -414,7 +414,7 @@ class Node(object):
 
 				if self.file_list is None:
 					return
-					
+
 				for file_name in self.file_list:
 					if {'id': previous_master} in self.file_list[file_name][0]:
 						self.file_list[file_name][0].remove({'id':previous_master})

@@ -76,10 +76,12 @@ class Nimbus(object):
 				self.worker_mapping = collections.defaultdict(list)
 				self.reassign_jobs(data['failed_node'], addr)
 
+				print data['failed_node'][0]
+				
 				if data['failed_node'][0] == '172.22.158.8':
 					self.is_active_nimbus = True
 					print 'New nimbus is now active'
-					
+
 	def reassign_jobs(self, failed_node, addr):
 		if not self.is_active_nimbus:
 			return
