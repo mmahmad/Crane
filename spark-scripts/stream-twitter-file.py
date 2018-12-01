@@ -22,7 +22,7 @@ if __name__ == "__main__":
 	# 			  .map(lambda word: (word, 1))\
 	# 			  .reduceByKey(lambda a, b: a+b)
 
-	counts = lines.map(lambda word: (word[4], 1)).cache()
+	counts = lines.map(lambda word: (word[4], 1))
 
 	# counts.saveAsTextFiles('NETWORK_WORDCOUNT10')
 	counts.pprint()
