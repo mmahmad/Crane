@@ -24,6 +24,7 @@ def main():
 
 	# get file name
 	config_file = cmd.strip().split(' ')[1]
+	start_time = time.time()
 
 	if cmd.strip().split(' ')[0] == 'start':
 		# pass file to Nimbus
@@ -49,7 +50,10 @@ def main():
 		return
 	
 	listenForResult()
+	end_time = time.time()
 
+	print 'Time taken to run job: ' + str(end_time - start_time)
+	
 def listenForResult():
 	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -94,9 +98,6 @@ def getResultFile(sdfs_master_ip, sdfs_master_port, sdfs_file_name):
 		if ret_value.strip() == 'ACK':
 			end_time = time.time()
 			print 'Output successfully downloaded from SDFS'
-			print 'Time taken to download file: '
-			print end_time - start_time			
-
 		elif ret_value.strip() == 'No such file exists':
 			print 'File does not exist in SDFS'
 			
