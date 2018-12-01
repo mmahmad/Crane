@@ -7,7 +7,7 @@ from pyspark.sql import SQLContext
 spark = SparkSession \
     .builder \
     .appName("spark_airline") \
-    .master("spark://172.22.158.8:7077") \
+    .master("spark://172.22.156.10:7077") \
     .getOrCreate()
 
 df = spark.read.csv("/home/mmahmad3/cs425mp4/input/airline-5k-with-header.csv")
