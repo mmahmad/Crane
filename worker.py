@@ -433,8 +433,8 @@ class Bolt(object):
 			# if bolt function is a filter, returns a boolean for each tuple
 			if self.task_details['function_type'] == 'filter':
 				output = self.function(tuple_data)
-				print item
 				if output: # if true, forward to next bolt
+					print item
 					if self.task_details['sink']:
 						# if tuple was already written, do not write to file again
 						if tuple_id in self.written_tuples:

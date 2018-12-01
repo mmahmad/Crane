@@ -14,8 +14,11 @@ spark = SparkSession \
 
 # df = spark.read.option("header", "false").csv("/home/mmahmad3/cs425mp4/input/tweets-5k-with-header.csv")
 df = spark.read.csv("/home/mmahmad3/cs425mp4/input/tweets-5k-with-header.csv")
-milCyDf = df.loc[df['username'] == '@mileycyrus']
-milCyDf.show()
+df.cache()
+# milCyDf = df.loc[df['username'] == '@mileycyrus']
+
+newDf = df.filter(df['username'] == '2Hood4Hollywood').show()
+newDf.show()
 # df.show()
 
 
