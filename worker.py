@@ -8,6 +8,7 @@ import random
 import node
 import functools
 import operator
+import multiprocessing
 
 def get_process_hostname():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -48,6 +49,7 @@ def forwardTupleToChildren(task_details, forward_tuple, sock):
 class Supervisor(object):
 	def __init__(self):
 		self.buffer = {}
+		self.process_list = []
 
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -120,18 +122,30 @@ class Supervisor(object):
 			task_details = data['task_details']
 			worker_id = task_details['worker_id']
 			
+			for process_id in self.process_list:
+				process_id.terminate()
+				
 			if task_details['type'] == 'spout':
 				spout = Spout(task_details)
 				self.buffer[worker_id] = spout
-				t_id = threading.Thread(target = spout.start)
-				t_id.daemon = True
-				t_id.start()
+				# t_id = threading.Thread(target = spout.start)
+				# t_id.daemon = True
+				# t_id.start()
+				p_id = multiprocessing.Process(target = spout.start)
+				self.process_list.append(p_id)
+				p_id.daemon = True
+				p_id.start()
 			elif task_details['type'] == 'bolt':
 				bolt = Bolt(task_details)
 				self.buffer[worker_id] = bolt
-				t_id = threading.Thread(target = bolt.start)
-				t_id.daemon = True
-				t_id.start()
+				# t_id = threading.Thread(target = bolt.start)
+				# t_id.daemon = True
+				# t_id.start()
+				p_id = multiprocessing.Process(target = spout.start)
+				self.process_list.append(p_id)
+				p_id.daemon = True
+				p_id.start()
+
 		elif data['type'].upper() == 'UPDATE':
 			pprint.pprint(data['task_details'])
 			task_details = data['task_details']
@@ -390,7 +404,7 @@ class Bolt(object):
 		t2 = threading.Thread(target = self.process_and_send)
 		t2.daemon = True
 		t2.start()
-	
+
 	def listen(self):
 		print "Waiting for tuples..."
 

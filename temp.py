@@ -1,13 +1,13 @@
 
 def main():
-	with open('input/tweets-5k.csv') as infile:
+	with open('input/airline-5k.csv') as infile:
 		content = infile.readlines()
 
 	content = [line.strip().split(',') for line in content]
 	count = 0
 
-	for line in content:
-		if '@mileycyrus' in line[5]:
+	for row in content:
+		if row[16] == 'LAX' and int(row[14]) > 0:
 			count += 1
 
 	print count
