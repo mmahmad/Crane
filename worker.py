@@ -133,7 +133,7 @@ class Supervisor(object):
 				# t_id.start()
 				p_id = multiprocessing.Process(target = spout.start)
 				self.process_list.append(p_id)
-				p_id.daemon = True
+				# p_id.daemon = True
 				p_id.start()
 			elif task_details['type'] == 'bolt':
 				bolt = Bolt(task_details)
@@ -143,7 +143,7 @@ class Supervisor(object):
 				# t_id.start()
 				p_id = multiprocessing.Process(target = bolt.start)
 				self.process_list.append(p_id)
-				p_id.daemon = True
+				# p_id.daemon = True
 				p_id.start()
 
 		elif data['type'].upper() == 'UPDATE':
