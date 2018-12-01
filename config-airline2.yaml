@@ -1,0 +1,22 @@
+W1:
+  type: spout
+  sink: False
+  input: airline-5k.csv
+  children: [W2]
+
+W2:
+  type: bolt
+  sink: False
+  function_type: filter
+  function: "lambda row: row[16] == 'LAX' and row[17] == 'LAS'"
+  parents: [W1]
+  children: [W3]
+
+W3:
+  type: bolt
+  sink: True
+  function_type: transform
+  function: "lambda row: row[8] + ' ' + row[9]"
+  parents: [W2]
+  output: airline2-5k-output.txt
+
