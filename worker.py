@@ -30,14 +30,10 @@ FILE_SYSTEM_RECVPORT = 10000
 Forward tuple to children
 '''
 def forwardTupleToChildren(task_details, forward_tuple, sock):
-	# TODO: If current worker is spout and it has multiple children, duplicate tuples should have separate unique tuple_id
+	
 	children = task_details['children_ip_port'] # list
 	for child_ip, child_port in children:
-		# print "forward tuple to child at IP: "
-		# print child_ip
-		# print "at port"
-		# print child_port
-		# forward
+
 		try:
 			sock.sendto(json.dumps(forward_tuple), (child_ip, child_port))
 		except Exception as e:
@@ -131,20 +127,13 @@ class Supervisor(object):
 				t_id = threading.Thread(target = spout.start)
 				t_id.daemon = True
 				t_id.start()
-				# p_id = multiprocessing.Process(target = spout.start)
-				# self.process_list.append(p_id)
-				# # p_id.daemon = True
-				# p_id.start()
+
 			elif task_details['type'] == 'bolt':
 				bolt = Bolt(task_details)
 				self.buffer[worker_id] = bolt
 				t_id = threading.Thread(target = bolt.start)
 				t_id.daemon = True
 				t_id.start()
-				# p_id = multiprocessing.Process(target = bolt.start)
-				# self.process_list.append(p_id)
-				# # p_id.daemon = True
-				# p_id.start()
 
 		elif data['type'].upper() == 'UPDATE':
 			pprint.pprint(data['task_details'])
@@ -163,21 +152,12 @@ class Supervisor(object):
 
 '''
 Spout is started by a supervisor;
-It reads a given source (file/db/etc) line-by-line, generates a unique msgId for each line and appends the msgId to it;
-Store the line in buffer (dict with msgId as key for fast search) with timestamp;
-Convert line to tuple and forward to child(ren) bolt(s);
-
-ACTIONS ON BUFFER
------------------
-Update timestamp on ACK+KEEP;
-Update timestamp and re-send if no ack from child(ren);
-Remove if ACK+REMOVE received;
+It reads a given source (file/db/etc) line-by-line, converts it into tuples, and forwards to child(ren)
 '''
 class Spout(object):
 	def __init__(self, task_details):
 		self.task_details = task_details
 		self.buffer = dict()
-		self.MAX_ACK_TIMEOUT = 5 # 1 second timeout		
 
 		# socket for sending tuples to child to avoid creating socket for each tuple
 		self.send_to_child_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -186,16 +166,9 @@ class Spout(object):
 		# set to False when KILL_SPOUT message received. This is to stop the spout from forwarding tuples further.
 		self.is_not_killed = True
 		self.KILL_SPOUT_PORT = 6543
-		self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		self.ack_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		self.ack_sock.bind((get_process_hostname(), self.KILL_SPOUT_PORT))
-
-		# TCP
-		#---------
-		# self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		# self.ack_sock.bind((socket.gethostname(), MY_PORT_LISTEN_FOR_ACKS))
-		# self.ack_sock.listen(5) # listen to max 5 bolts'
-		
+		self.kill_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		self.kill_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		self.kill_sock.bind((get_process_hostname(), self.KILL_SPOUT_PORT))
 	
 	def start(self):
 		print "Spout started"
@@ -205,13 +178,9 @@ class Spout(object):
 		t1.daemon = True
 		t1.start()
 
-		# t2 = threading.Thread(target = self.listen_for_acks)
-		# t2.daemon = True
-		# t2.start()
-
-		t3 = threading.Thread(target=self.listen_for_kill_command)
-		t3.daemon = True
-		t3.start()
+		t2 = threading.Thread(target=self.listen_for_kill_command)
+		t2.daemon = True
+		t2.start()
 
 	def send_data(self):
 		start_poll = False													
@@ -240,12 +209,6 @@ class Spout(object):
 					forwardTupleToChildren(self.task_details, self.buffer[tuple_id], self.send_to_child_sock)
 					time.sleep(0.01)
 
-					# if not start_poll:
-					# 	timeout_thread = threading.Thread(target = self.check_timeouts, args = ())
-					# 	timeout_thread.daemon = True
-					# 	timeout_thread.start()
-					# 	start_poll = True
-
 					tuple_id += 1
 				else:
 					break
@@ -269,95 +232,10 @@ class Spout(object):
 
 	def listen_for_kill_command(self):
 		while True:
-			data, addr = self.ack_sock.recvfrom(1000)
+			data, addr = self.kill_sock.recvfrom(1000)
 
 			if data.strip() == 'KILL_SPOUT':
 				self.is_not_killed = False
-
-	def listen_for_acks(self):
-		while(1):
-			# UDP			
-			data, addr = self.ack_sock.recvfrom(1024000)
-			
-			# TCP
-			# client_socket, address = self.ack_sock.accept()
-			
-			t = threading.Thread(target = self.process_acks, args=(data,))
-			t.daemon = True
-			t.start()
-
-	'''
-	received_data: 
-		{
-			'type': 'KEEP' / 'REMOVE'
-			'tuple_id': 31
-		}
-	'''
-	def process_acks(self, data):
-
-		# data = client_socket.recv(1024)
-		received_data = json.loads(data)
-
-		print 'ack received for tuple with id: ' + str(received_data['tuple_id'])
-		
-		# If received data has type=='KEEP', update timestamp
-		if received_data['type'].upper() == 'KEEP':
-			self.buffer[received_data['tuple_id']]['timestamp'] = time.time()
-
-		# else if received data has type=='REMOVE', remove from buffer
-		elif received_data['type'].upper() == 'REMOVE':
-			# print 'length of buffer before removal: '
-			# print len(self.buffer)
-			del self.buffer[received_data['tuple_id']]
-			# print 'length of buffer after removal: '
-			# print len(self.buffer)
-
-	'''
-	Continuosly loop through buffer to see if any bolt has timed-out (ack not received).
-	Re-send if timeout > MAX_ACK_TIMEOUT
-	'''
-	def check_timeouts(self):
-		#while len(self.buffer) > 0:
-		# while True:
-		# 	buffer_copy_len = len(self.buffer.copy())
-			
-		# 	for i in range(buffer_copy_len):
-		# 		tuple_id, tuple_data = self.buffer.keys()[i], self.buffer.values()[i]			
-		# 		if time.time() - tuple_data['timestamp'] > self.MAX_ACK_TIMEOUT:
-		# 			# check if tuple is still there in self.buffer (possible that it was removed by now due to listen_for_ack thread's action)
-		# 			# if tuple_id in self.buffer:
-		# 			# re-send tuple
-		# 			forwardTupleToChildren(self.task_details, tuple_data, self.send_to_child_sock)
-		# 			self.buffer[tuple_id]['timestamp'] = time.time()
-		# 			print 'Resent tuple' + str(tuple_id)
-		# 			# else:
-		# 				# print "Cannot update timestamp. Tuple already deleted!"
-
-		while True:
-			# print'---------------------------------------------'
-			buffer_copy = self.buffer.copy()
-			# print 'buffer_copy'
-			# pprint.pprint(buffer_copy)
-			# print 'buffer'
-			# pprint.pprint(self.buffer)
-
-			for tuple_id, tuple_data in buffer_copy.items():
-				# pprint.pprint(tuple_id)
-				# pprint.pprint(tuple_data)
-				if time.time() - tuple_data['timestamp'] > self.MAX_ACK_TIMEOUT:
-					# print time.time()
-					# check if tuple is still there in self.buffer (possible that it was removed by now due to listen_for_ack thread's action)
-					if tuple_id in self.buffer:
-					# re-send tuple
-						self.buffer[tuple_id]['timestamp'] = time.time()
-						forwardTupleToChildren(self.task_details, tuple_data, self.send_to_child_sock)
-						print 'Resent tuple' + str(tuple_id)
-						# pprint.pprint(tuple_id)
-						# pprint.pprint(tuple_data)
-					else:
-						print "Cannot update timestamp. Tuple already deleted!"
-
-			time.sleep(5)
 
 class Bolt(object):
 	def __init__(self, task_details):
@@ -381,22 +259,6 @@ class Bolt(object):
 
 		self.state = None
 
-	def send_ack(self, tuple_id, msg_type):
-		# send ACK+REMOVE message to spout
-		ack_message = {
-			'type': msg_type,
-			'tuple_id': tuple_id
-		}
-		
-		# TCP
-		# self.ack_socket.sendall(json.dumps(ack_message))
-		try:
-			self.send_to_child_sock.sendto(json.dumps(ack_message), (self.spout_ip, self.spout_port))
-		except Exception as e:
-			print e
-			print 'Unable to contact spout'
-			return
-
 	def start(self):
 		# open output file and save handle if sink
 		if self.task_details['sink']:
@@ -404,16 +266,8 @@ class Bolt(object):
 			output_filename = self.task_details['output']
 			self.output_file = open("local_files/" + output_filename, 'w', 0) # 0 to write to file immediately
 
-							
-		#Create outgoing TCP connection to send ACKs
-		# try:
-		# 	self.ack_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		# 	self.ack_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		# 	self.ack_socket.connect((self.spout_ip, self.spout_port))
-		# except socket.error as e: #If connection to remote machine fails
-		# 	print 'Could not connect to ' + str(self.spout_ip)
-		# 	return
-				
+		# Start two threads, one to listen for new jobs, the other to start the bolts for it
+		# 		
 		t1 = threading.Thread(target = self.listen)
 		t1.daemon = True
 		t1.start()  
@@ -435,14 +289,10 @@ class Bolt(object):
 		while True:
 			item = self.queue.get()
 			tuple_id, tuple_data = item['tuple_id'], item['tuple']
-			# print "item"
-
-			# if not self.task_details['sink']:
-			# 	print tuple_data
 
 			if tuple_id == 'EXIT':
 				if self.task_details['sink']:
-					# TODO: PUT file (Use MP3)
+
 					if self.task_details['function_type'] == 'aggregate':
 						self.output_file.write(str(self.state))
 						self.output_file.write('\n')
@@ -469,25 +319,13 @@ class Bolt(object):
 					if self.task_details['sink']:
 						# if tuple was already written, do not write to file again
 						if tuple_id in self.written_tuples:
-							# print 'Line already written, ignore'
-							# self.send_ack(tuple_id, 'REMOVE')
 							pass
 						else:
-							# self.written_tuples.add(tuple_id)
-							# print 'List of tuple_ids already written is'
 							self.output_file.write((output.encode('utf-8')))
 							self.output_file.write('\n')
-							# print 'send ACK+REMOVE for filtered tuple'
-							# self.send_ack(tuple_id, 'REMOVE')
 					else:
-						# send ACK+KEEP message to spout
-						# print 'send ACK+KEEP for filtered tuple'
-						# self.send_ack(tuple_id, 'KEEP')
-
 						forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
 				else:
-					# print 'send ACK+REMOVE for filtered tuple'
-					# self.send_ack(tuple_id, 'REMOVE') # in case tuple has been filtered out, spout no longer needs to keep track of this tuple
 					pass
 			elif self.task_details['function_type'] == 'transform':
 				output = self.function(tuple_data)
@@ -497,21 +335,14 @@ class Bolt(object):
 						# send ACK+REMOVE message to spout
 						if tuple_id in self.written_tuples:
 							print 'Line already written, ignore'
-							# self.send_ack(tuple_id, 'REMOVE')
 						else:
-							self.written_tuples.add(tuple_id)
-							# print 'List of tuple_ids already written is'
-							# print self.written_tuples				
+							self.written_tuples.add(tuple_id)			
 							self.output_file.write((output.encode('utf-8')))
 							self.output_file.write('\n')
-							# print 'send ACK+REMOVE for transformed tuple'
-							# self.send_ack(tuple_id, 'REMOVE')
 					else:
-						item['tuple'] = output
-						# send ACK+KEEP message to spout
+						item['tuple'] = output						
 						forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
-						# print 'send ACK+KEEP for transformed tuple'
-						# self.send_ack(tuple_id, 'KEEP')						
+					
 			elif self.task_details['function_type'] == 'aggregate':
 				if self.state is None:
 					self.state = tuple_data
