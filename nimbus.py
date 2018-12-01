@@ -73,7 +73,6 @@ class Nimbus(object):
 				self.machine_list.append(addr[0])
 			elif data['type'] == 'FAIL':
 				# self.reassign_jobs(data['failed_node'])
-				print data['failed_node'][0]
 
 				if data['failed_node'][0] == '172.22.158.8':
 					self.is_active_nimbus = True
@@ -110,94 +109,7 @@ class Nimbus(object):
 
 		self.reverse_mapping = {}
 		self.worker_mapping = collections.defaultdict(list)
-		#Remove IP from IP->job mapping
-		'''
-		del self.worker_mapping[failed_node_ip]
 
-		original_details = None
-
-		for job in jobs_to_reassign:
-			new_node = random.choice(self.machine_list)
-			original_details = self.reverse_mapping[job]
-			self.reverse_mapping[job] = (new_node, self.port + 1)
-			self.port += 1
-
-			print 'Assigned job ' + str(job) + ' to machine ' + str(new_node)
-
-			try:
-				sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-				sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-				sock.sendto(json.dumps({'type': 'NEW', 'task_details':self.config[job]}), (new_node, SUPERVISOR_LISTEN_PORT))
-				print 'Sent details to ' + str(new_node)
-			except:
-				print 'Unable to contact worker'
-				return
-
-			#Tell all its parents to update their children IP details
-			for parent in self.config[job]['parents']:
-				self.config[parent]['children_ip_port'].remove(original_details)
-				self.config[parent]['children_ip_port'].append(self.reverse_mapping[job])
-
-				print 'Updated child details in parent'
-				pprint.pprint(self.config[parent])
-
-				print 'Parent Ip:'
-				print self.reverse_mapping[parent][0]		
-				parent_ip = self.reverse_mapping[parent][0]
-				data = {
-					'type': 'UPDATE',
-					'task_details': self.config[parent]
-				}
-
-				try:
-					sock1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-					sock1.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-					print data, parent_ip, SUPERVISOR_LISTEN_PORT
-
-					sock1.sendto(json.dumps(data), (parent_ip, SUPERVISOR_LISTEN_PORT))
-					print 'Sent updated child details to ' + str(self.reverse_mapping[parent[0]])
-				except Exception as e:
-					print '1'
-					print e
-					print 'Unable to contact parent'
-					return
-				
-				try:
-					sock1.sendto(json.dumps(data), (parent_ip, SUPERVISOR_LISTEN_PORT))
-				except Exception as e:
-					print '2'
-					print e
-
-				# try:
-				# 	sock1.sendto('123', (parent_ip, SUPERVISOR_LISTEN_PORT))
-				# except Exception as e:
-				# 	print '3'
-				# 	print e
-			
-			#Tell all its children to update their parent IP Details
-			for child in self.config[job]['children']:
-				self.config[parent]['parent_ip_port'].remove(original_details)
-				self.config[parent]['parent_ip_port'].append(self.reverse_mapping[job])
-
-				child_ip = self.reverse_mapping[parent][0]
-
-				try:
-					sock2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-					sock2.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-					data = {
-						'type': 'UPDATE',
-						'task_details': self.config[parent]
-					}
-					sock2.sendto(json.dumps(data), (child_ip, SUPERVISOR_LISTEN_PORT))
-					print 'Sent updated parent details to ' + str(self.reverse_mapping[child][0])
-				except Exception as e:
-					print e
-					print 'Unable to contact child'
-					return
-		
-		print 'Updated config with reassigned and children IPs'
-		pprint.pprint(self.config)
-		'''
 		self.assign_jobs(addr, reassign=True)
 
 	def assign_jobs(self, addr, reassign = False):
@@ -254,9 +166,6 @@ class Nimbus(object):
 					self.config[worker]['parent_ip_port'].append(self.reverse_mapping[parent])
 			except KeyError as e:
 				pass
-
-		print 'Updated config with parent and children IPs'
-		pprint.pprint(self.config)
 
 		for machine in self.machine_list:
 			for worker in self.worker_mapping[machine]:

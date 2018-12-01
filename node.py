@@ -297,7 +297,7 @@ class Node(object):
 		while not self.command:
 			pass
 
-		print "Command: ", self.command
+		# print "Command: ", self.command
 		while self.command == "JOIN":
 			try:
 				data, addr = serversocket.recvfrom(102400)
