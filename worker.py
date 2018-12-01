@@ -178,11 +178,6 @@ class Spout(object):
 		self.task_details = task_details
 		self.buffer = dict()
 		self.MAX_ACK_TIMEOUT = 5 # 1 second timeout		
-		# UDP
-		#---------
-		self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		self.ack_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		self.ack_sock.bind((get_process_hostname(), MY_PORT_LISTEN_FOR_ACKS))
 
 		# socket for sending tuples to child to avoid creating socket for each tuple
 		self.send_to_child_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -191,6 +186,9 @@ class Spout(object):
 		# set to False when KILL_SPOUT message received. This is to stop the spout from forwarding tuples further.
 		self.is_not_killed = True
 		self.KILL_SPOUT_PORT = 6543
+		self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		self.ack_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		self.ack_sock.bind((get_process_hostname(), self.KILL_SPOUT_PORT))
 
 		# TCP
 		#---------
@@ -294,10 +292,6 @@ class Spout(object):
 			'tuple_id': 31
 		}
 	'''
-
-	def listen_for_kill_command(self):
-		# TODO:
-		pass
 	def process_acks(self, data):
 
 		# data = client_socket.recv(1024)
