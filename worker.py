@@ -406,8 +406,8 @@ class Bolt(object):
 			tuple_id, tuple_data = item['tuple_id'], item['tuple']
 			# print "item"
 
-			if not self.task_details['sink']:
-				print tuple_data
+			# if not self.task_details['sink']:
+			# 	print tuple_data
 
 			if tuple_id == 'EXIT':
 				if self.task_details['sink']:
@@ -433,6 +433,7 @@ class Bolt(object):
 			# if bolt function is a filter, returns a boolean for each tuple
 			if self.task_details['function_type'] == 'filter':
 				output = self.function(tuple_data)
+				print item
 				if output: # if true, forward to next bolt
 					if self.task_details['sink']:
 						# if tuple was already written, do not write to file again
@@ -443,7 +444,6 @@ class Bolt(object):
 						else:
 							# self.written_tuples.add(tuple_id)
 							# print 'List of tuple_ids already written is'
-							print output
 							self.output_file.write((output.encode('utf-8')))
 							self.output_file.write('\n')
 							# print 'send ACK+REMOVE for filtered tuple'
@@ -460,6 +460,7 @@ class Bolt(object):
 					pass
 			elif self.task_details['function_type'] == 'transform':
 				output = self.function(tuple_data)
+				print output
 				if output:
 					if self.task_details['sink']:
 						# send ACK+REMOVE message to spout
@@ -469,8 +470,7 @@ class Bolt(object):
 						else:
 							self.written_tuples.add(tuple_id)
 							# print 'List of tuple_ids already written is'
-							# print self.written_tuples
-							print output					
+							# print self.written_tuples				
 							self.output_file.write((output.encode('utf-8')))
 							self.output_file.write('\n')
 							# print 'send ACK+REMOVE for transformed tuple'
@@ -486,7 +486,7 @@ class Bolt(object):
 					self.state = tuple_data
 				else:
 					self.state = functools.reduce(self.function, [self.state, tuple_data])
-					print self.state
+					print 'Intermediate output at sink' + str(self.state)
 			elif self.task_details['function_type'] == 'join':
 				#TODO: join()  
 				pass

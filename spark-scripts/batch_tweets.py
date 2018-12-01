@@ -10,11 +10,19 @@ spark = SparkSession \
     .master("spark://172.22.158.8:7077") \
     .getOrCreate()
 
-logData = spark.read.text('/home/mmahmad3/cs425mp4/input/tweets-5k.csv').cache()
-numAs = logData.filter(logData.value.contains('@mileycyrus')).count()
+# logData = spark.read.text('/home/mmahmad3/cs425mp4/input/tweets-5k.csv').cache()
 
-print("Lines with @mileycyrus: %i" % (numAs))
-numAs.pprint()
+# df = spark.read.option("header", "false").csv("/home/mmahmad3/cs425mp4/input/tweets-5k-with-header.csv")
+df = spark.read.csv("/home/mmahmad3/cs425mp4/input/tweets-5k-with-header.csv")
+milCyDf = df.loc[df['username'] == '@mileycyrus']
+milCyDf.show()
+# df.show()
+
+
+# numAs = logData.filter(logData.value.contains('@mileycyrus')).count()
+
+# print("Lines with @mileycyrus: %i" % (numAs))
+# numAs.pprint()
 
 spark.stop()
 

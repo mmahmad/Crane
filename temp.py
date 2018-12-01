@@ -7,7 +7,7 @@ def main():
 	count = 0
 
 	for line in content:
-		if 'Mon' in line[2]:
+		if '@mileycyrus' in line[5]:
 			count += 1
 
 	print count
