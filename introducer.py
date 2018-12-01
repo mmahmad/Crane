@@ -71,7 +71,7 @@ class Introducer(object):
 					
 					self.lock.acquire()
 					old_master = self.master
-					self.master = new_membership_list[0]['id']
+					self.master = new_membership_list[-1]['id']
 
 					if old_master == self.master:
 						#Duplicate failure message detected
