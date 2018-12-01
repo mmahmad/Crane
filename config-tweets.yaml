@@ -8,7 +8,7 @@ W2:
   type: bolt
   sink: False
   function_type: filter
-  function: "lambda tweet: 'Mon' in tweet[2]"
+  function: "lambda tweet: 'Mon' in tweet[2] and '@mileycyrus' not in tweet[5]"
   parents: [W1]
   children: [W4]
 

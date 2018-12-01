@@ -407,7 +407,7 @@ class Bolt(object):
 			# print "item"
 
 			if not self.task_details['sink']:
-				print tuple_id, tuple_data
+				print tuple_data
 
 			if tuple_id == 'EXIT':
 				if self.task_details['sink']:

@@ -10,4 +10,11 @@ spark = SparkSession \
     .master("spark://172.22.158.8:7077") \
     .getOrCreate()
 
-df = spark.read.csv('/home/mmahmad3/cs425mp4/input/tweets.csv')
+logData = spark.read.text('/home/mmahmad3/cs425mp4/input/tweets-5k.csv').cache()
+numAs = logData.filter(logData.value.contains('@mileycyrus')).count()
+
+print("Lines with @mileycyrus: %i" % (numAs))
+numAs.pprint()
+
+spark.stop()
+
