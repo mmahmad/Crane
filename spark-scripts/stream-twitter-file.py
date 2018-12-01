@@ -13,7 +13,7 @@ if __name__ == "__main__":
 		# print file=sys.stderr
 		# sys.exit(-1)
    # configure Spark
-	conf = SparkConf().setAppName("NETWORK_WORDCOUNT5")
+	conf = SparkConf().setAppName("STREAM-TWITTER")
 	conf = conf.setMaster("spark://172.22.158.8:7077")
 	sc = SparkContext(conf=conf)
 	ssc = StreamingContext(sc, 1)
@@ -22,7 +22,7 @@ if __name__ == "__main__":
 	# 			  .map(lambda word: (word, 1))\
 	# 			  .reduceByKey(lambda a, b: a+b)
 
-	counts = lines.map(lambda word: (word[4], 1))
+	counts = lines.map(lambda word: (word[4], 1)).cache()
 
 	# counts.saveAsTextFiles('NETWORK_WORDCOUNT10')
 	counts.pprint()

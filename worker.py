@@ -124,7 +124,7 @@ class Supervisor(object):
 			
 			for process_id in self.process_list:
 				process_id.terminate()
-				
+
 			if task_details['type'] == 'spout':
 				spout = Spout(task_details)
 				self.buffer[worker_id] = spout
@@ -141,7 +141,7 @@ class Supervisor(object):
 				# t_id = threading.Thread(target = bolt.start)
 				# t_id.daemon = True
 				# t_id.start()
-				p_id = multiprocessing.Process(target = spout.start)
+				p_id = multiprocessing.Process(target = bolt.start)
 				self.process_list.append(p_id)
 				p_id.daemon = True
 				p_id.start()
