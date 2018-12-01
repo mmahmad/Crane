@@ -227,7 +227,8 @@ class Spout(object):
 
 					# split line and store as tuple
 					forward_tuple = tuple(line.split(','))
-
+					print forward_tuple
+					
 					# store the tuple in buffer	
 					self.buffer[tuple_id]= {
 						'tuple_id': tuple_id,

@@ -107,7 +107,7 @@ class Nimbus(object):
 				except Exception as e:
 					print e
 					print 'Could not connect to old spout'
-					
+
 		self.reverse_mapping = {}
 		self.worker_mapping = collections.defaultdict(list)
 		#Remove IP from IP->job mapping
