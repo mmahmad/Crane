@@ -49,7 +49,7 @@ def forwardTupleToChildren(task_details, forward_tuple, sock):
 class Supervisor(object):
 	def __init__(self):
 		self.buffer = {}
-		self.process_list = []
+		# self.process_list = []
 
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -122,29 +122,29 @@ class Supervisor(object):
 			task_details = data['task_details']
 			worker_id = task_details['worker_id']
 			
-			for process_id in self.process_list:
-				process_id.terminate()
+			# for process_id in self.process_list:
+			# 	process_id.terminate()
 
 			if task_details['type'] == 'spout':
 				spout = Spout(task_details)
 				self.buffer[worker_id] = spout
-				# t_id = threading.Thread(target = spout.start)
-				# t_id.daemon = True
-				# t_id.start()
-				p_id = multiprocessing.Process(target = spout.start)
-				self.process_list.append(p_id)
-				# p_id.daemon = True
-				p_id.start()
+				t_id = threading.Thread(target = spout.start)
+				t_id.daemon = True
+				t_id.start()
+				# p_id = multiprocessing.Process(target = spout.start)
+				# self.process_list.append(p_id)
+				# # p_id.daemon = True
+				# p_id.start()
 			elif task_details['type'] == 'bolt':
 				bolt = Bolt(task_details)
 				self.buffer[worker_id] = bolt
-				# t_id = threading.Thread(target = bolt.start)
-				# t_id.daemon = True
-				# t_id.start()
-				p_id = multiprocessing.Process(target = bolt.start)
-				self.process_list.append(p_id)
-				# p_id.daemon = True
-				p_id.start()
+				t_id = threading.Thread(target = bolt.start)
+				t_id.daemon = True
+				t_id.start()
+				# p_id = multiprocessing.Process(target = bolt.start)
+				# self.process_list.append(p_id)
+				# # p_id.daemon = True
+				# p_id.start()
 
 		elif data['type'].upper() == 'UPDATE':
 			pprint.pprint(data['task_details'])
@@ -188,6 +188,10 @@ class Spout(object):
 		self.send_to_child_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.send_to_child_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
+		# set to False when KILL_SPOUT message received. This is to stop the spout from forwarding tuples further.
+		self.is_not_killed = True
+		self.KILL_SPOUT_PORT = 6543
+
 		# TCP
 		#---------
 		# self.ack_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -207,6 +211,10 @@ class Spout(object):
 		# t2.daemon = True
 		# t2.start()
 
+		t3 = threading.Thread(target=self.listen_for_kill_command)
+		t3.daemon = True
+		t3.start()
+
 	def send_data(self):
 		start_poll = False													
 		tuple_id = 0 # incremented tuple_id added to each tuple
@@ -215,50 +223,57 @@ class Spout(object):
 		# read data line-by-line from source, add msgId, and forward to child bolt(s)
 		with open('input/' + self.task_details['input']) as infile:
 			for line in infile:
-				line = line.rstrip()
+				# check if spout has not been killed
+				if self.is_not_killed:
+					line = line.rstrip()
 
-				# split line and store as tuple
-				forward_tuple = tuple(line.split(','))
+					# split line and store as tuple
+					forward_tuple = tuple(line.split(','))
 
-				# store the tuple in buffer	
-				self.buffer[tuple_id]= {
-					'tuple_id': tuple_id,
-					'tuple': forward_tuple,
-					'timestamp': time.time() # epoch. number of seconds.
-				}
-				
-				# forward the tuple to child bolt(s)
-				forwardTupleToChildren(self.task_details, self.buffer[tuple_id], self.send_to_child_sock)
-				time.sleep(0.01)
+					# store the tuple in buffer	
+					self.buffer[tuple_id]= {
+						'tuple_id': tuple_id,
+						'tuple': forward_tuple,
+						'timestamp': time.time() # epoch. number of seconds.
+					}
+					
+					# forward the tuple to child bolt(s)
+					forwardTupleToChildren(self.task_details, self.buffer[tuple_id], self.send_to_child_sock)
+					time.sleep(0.01)
 
-				# if not start_poll:
-				# 	timeout_thread = threading.Thread(target = self.check_timeouts, args = ())
-				# 	timeout_thread.daemon = True
-				# 	timeout_thread.start()
-				# 	start_poll = True
+					# if not start_poll:
+					# 	timeout_thread = threading.Thread(target = self.check_timeouts, args = ())
+					# 	timeout_thread.daemon = True
+					# 	timeout_thread.start()
+					# 	start_poll = True
 
-				tuple_id += 1
+					tuple_id += 1
+				else:
+					break
 
-		print "spout sent all data from file"
+		if self.is_not_killed:
+			print "spout sent all data from file"
 
-		time.sleep(2)
-		# after all tuples sent, send 'EXIT' to all children
-		EXIT_TUPLE = {
-					'tuple_id': 'EXIT',
-					'tuple': None,
-					'timestamp': None
-				}
-		forwardTupleToChildren(self.task_details, EXIT_TUPLE, self.send_to_child_sock)
-		print 'Spout shutting down...'
-		return
-									
-		# while True:
-		# 	print 'length of buffer'
-		# 	print len(self.buffer)
-		# 	time.sleep(3)
-		# 	if len(self.buffer) == 0:
-		# 		print 'Job completed'
-		# 		return
+			time.sleep(2)
+			# after all tuples sent, send 'EXIT' to all children
+			EXIT_TUPLE = {
+						'tuple_id': 'EXIT',
+						'tuple': None,
+						'timestamp': None
+					}
+			forwardTupleToChildren(self.task_details, EXIT_TUPLE, self.send_to_child_sock)
+			print 'Spout shutting down...'
+			return
+		
+		else:
+			print "Spout streaming stopped due to KILL_SPOUT"
+
+	def listen_for_kill_command(self):
+		while True:
+			data, addr = self.ack_sock.recvfrom(1000)
+
+			if data.strip() == 'KILL_SPOUT':
+				self.is_not_killed = False
 
 	def listen_for_acks(self):
 		while(1):
@@ -279,6 +294,10 @@ class Spout(object):
 			'tuple_id': 31
 		}
 	'''
+
+	def listen_for_kill_command(self):
+		# TODO:
+		pass
 	def process_acks(self, data):
 
 		# data = client_socket.recv(1024)

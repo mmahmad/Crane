@@ -73,9 +73,6 @@ class Nimbus(object):
 				self.machine_list.append(addr[0])
 			elif data['type'] == 'FAIL':
 				# self.reassign_jobs(data['failed_node'])
-				self.reverse_mapping = {}
-				self.worker_mapping = collections.defaultdict(list)
-
 				print data['failed_node'][0]
 
 				if data['failed_node'][0] == '172.22.158.8':
@@ -96,6 +93,23 @@ class Nimbus(object):
 			return
 
 		self.machine_list.remove(failed_node_ip)
+
+		#Tell old spout to stop
+		for worker in self.config:
+			if self.config[worker]['type'] == 'spout':
+				spout_ip = self.reverse_mapping[worker][0]
+				
+				try:
+					sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+					sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+					sock.sendto('KILL_SPOUT', (spout_ip, 6543))
+					print 'Sent KILL_SPOUT to ' + str(spout_ip)
+				except Exception as e:
+					print e
+					print 'Could not connect to old spout'
+					
+		self.reverse_mapping = {}
+		self.worker_mapping = collections.defaultdict(list)
 		#Remove IP from IP->job mapping
 		'''
 		del self.worker_mapping[failed_node_ip]
