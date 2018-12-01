@@ -211,6 +211,7 @@ class Spout(object):
 		start_poll = False													
 		tuple_id = 0 # incremented tuple_id added to each tuple
 
+		print "spout reading and sending data..."
 		# read data line-by-line from source, add msgId, and forward to child bolt(s)
 		with open('input/' + self.task_details['input']) as infile:
 			for line in infile:
@@ -237,6 +238,8 @@ class Spout(object):
 				# 	start_poll = True
 
 				tuple_id += 1
+
+		print "spout sent all data from file"
 
 		time.sleep(2)
 		# after all tuples sent, send 'EXIT' to all children
