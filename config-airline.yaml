@@ -1,7 +1,7 @@
 W1:
   type: spout
   sink: False
-  input: airline-5k.csv
+  input: airline-2500.csv
   children: [W2]
 
 W2:
