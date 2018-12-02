@@ -10,7 +10,7 @@ We need to run the failure detector in the protocol, hence we need to run the in
 
 ## Crane-Client
 * On VM3, run the crane client (used to submit jobs) as ```python crane-client.py```.
-* At the prompt, use start <config file> to submit a Crane job
+* At the prompt, use start config_file_name to submit a Crane job
 
 ## Workers
 * On the remaining VMs, run ```python worker.py```. The workers then listen for jobs from the Nimbus
