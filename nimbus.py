@@ -139,7 +139,7 @@ class Nimbus(object):
 
 		#Find spout IP to send to everybody so they can send ACKs to spout
 		spout_ip = self.reverse_mapping[spout_node]
-		print self.failure_detector_node.master_id
+		# print self.failure_detector_node.master_id
 
 		for worker in self.config:
 			self.config[worker]['spout_ip_port'] = (spout_ip[0], SPOUT_LISTEN_PORT)
