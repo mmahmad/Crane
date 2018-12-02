@@ -349,9 +349,26 @@ class Bolt(object):
 				else:
 					self.state = functools.reduce(self.function, [self.state, tuple_data])
 					print 'Intermediate output at sink: ' + str(self.state)
+			
 			elif self.task_details['function_type'] == 'join':
-				#TODO: join()  
-				pass
+				join_columns = self.task_details['join_columns']
+				join_file = self.task_details['join_file']
+
+				with open(join_file, 'r') as jf:
+					lines = jf.readlines()
+					for row in lines:
+						if tuple_data[join_columns] == lines[join_columns]:
+							#Matches condition, join tuple and forward to children
+							new_tuple = tuple_data + lines
+
+							item['tuple'] = new_tuple
+
+							if self.task_details['sink']:
+								self.output_file.write(output.encode('utf-8'))
+								self.output_file.write('\n')
+							else:
+								forwardTupleToChildren(self.task_details, item, self.send_to_child_sock)
+
 
 	def saveResults(self):
 		master_socket = None
